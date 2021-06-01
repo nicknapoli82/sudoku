@@ -16,15 +16,25 @@ struct tile {
     i8  absolute;
 };
 
-// Just making this matrix of tiles global
-// so that I don't have to manage it mentally
-struct tile grid[9][9];
-
 typedef struct tile_env {
     i8 x;
     i8 y;
     i8 number;
+    struct tile *tile;
+    struct tile (*grid)[9];
 } tile_env;
+
+tile_env *gen_tile_env(i8 x, i8 y, i8 number, struct tile *tile, struct tile (*grid)[9]) {
+    tile_env* t_env = calloc(1, sizeof(tile_env));
+    if (t_env == NULL)
+	return NULL;
+    t_env->x = x;
+    t_env->y = y;
+    t_env->number = number;
+    t_env->tile = tile;
+    t_env->grid = grid;
+    return t_env;
+}
 
 // NOTE: func(function env, func_queue *)
 typedef struct func_queue func_queue;
@@ -45,7 +55,7 @@ i8 enqueue(func_queue* self, i8 (*action)(void *, func_queue *), void *env);
 i8 dequeue(func_queue* self);
 i8 tile_resolved(void *, func_queue *);
 i8 tile_update(void *, func_queue *);
-void print_grid();
+void print_grid(struct tile[][9]);
 void OOM_error();
 
 // Whatever algorithms I want can go here
@@ -54,6 +64,8 @@ void OOM_error();
 int main(void) {
     // Function queue, to just pass around and use
     func_queue *fQueue = calloc(1, sizeof(func_queue));
+    struct tile grid[9][9];
+    
     if (fQueue == NULL)
         OOM_error();
     // Read in input. Consumes first 81 digits found 0 - 9
@@ -83,12 +95,9 @@ int main(void) {
         for (int y = 0; y < 9; y++)
             for (int x = 0; x < 9; x++)
                 if (grid[y][x].absolute) {
-                    tile_env* t_env = calloc(1, sizeof(tile_env));
+		    tile_env* t_env = gen_tile_env(x, y, grid[y][x].absolute, &grid[y][x], grid);
                     if (t_env == NULL)
                         OOM_error();
-                    t_env->x = x;
-                    t_env->y = y;
-                    t_env->number = grid[y][x].absolute;
                     if (enqueue(fQueue, tile_resolved, t_env) == 0) {
                         OOM_error();
                     }
@@ -117,7 +126,7 @@ int main(void) {
             break;
     }
     
-    print_grid();
+    print_grid(grid);
     printf("%lu\n", max_count);
     free(fQueue);
 }
@@ -158,7 +167,7 @@ i8 dequeue(func_queue *self) {
 i8 tile_resolved(void *e, func_queue *queue) {
     func_queue *fq = queue;
     tile_env *env = e;
-    struct tile *t = &grid[env->y][env->x];
+    struct tile *t = env->tile;
     t->absolute = env->number;
     t->possible = 0;
     i8 lower_y = env->y - (env->y % 3);
@@ -167,40 +176,31 @@ i8 tile_resolved(void *e, func_queue *queue) {
     i8 upper_x = lower_x + 3;
     for (i8 t_y = lower_y; t_y < upper_y; t_y++) {
         for (i8 t_x = lower_x; t_x < upper_x; t_x++) {
-	    if (grid[t_y][t_x].absolute)
+	    if (env->grid[t_y][t_x].absolute)
 		continue;
-            tile_env *t_new = calloc(1, sizeof(tile_env));
-            if (t == NULL) OOM_error();
-            t_new->y = t_y;
-            t_new->x = t_x;
-            t_new->number = env->number;
+	    tile_env *t_new = gen_tile_env(t_x, t_y, env->number, &env->grid[t_y][t_x], env->grid);
+            if (t_new == NULL) OOM_error();
             if (enqueue(fq, tile_update, t_new) == 0)
                 OOM_error();
         }
     }
     for (i8 t_y = 0; t_y < 9; t_y++) {
-	if (grid[t_y][env->x].absolute)
+	if (env->grid[t_y][env->x].absolute)
 	    continue;
         if (!(t_y >= lower_y && t_y < upper_y)) {
-            tile_env *t_new = calloc(1, sizeof(tile_env));
+            tile_env *t_new = gen_tile_env(env->x, t_y, env->number, &env->grid[t_y][env->x], env->grid);
             if (t_new == NULL) OOM_error();
-            t_new->y = t_y;
-            t_new->x = env->x;
-            t_new->number = env->number;
             if (enqueue(fq, tile_update, t_new) == 0)
                 OOM_error();        
         }
             
     }
     for (i8 t_x = 0; t_x < 9; t_x++) {
-	if (grid[env->y][t_x].absolute)
+	if (env->grid[env->y][t_x].absolute)
 	    continue;
         if (!(t_x >= lower_x && t_x < upper_x)) {
-            tile_env *t_new = calloc(1, sizeof(tile_env));
+	    tile_env *t_new = gen_tile_env(t_x, env->y, env->number, &env->grid[env->y][t_x], env->grid);
             if (t_new == NULL) OOM_error();
-            t_new->y = env->y;
-            t_new->x = t_x;
-            t_new->number = env->number;
             if (enqueue(fq, tile_update, t_new) == 0)
                 OOM_error();        
         }
@@ -212,7 +212,7 @@ i8 tile_resolved(void *e, func_queue *queue) {
 i8 tile_update(void *e, func_queue *queue) {
     func_queue *fq = queue;
     tile_env *env = e;
-    struct tile *t = &grid[env->y][env->x];
+    struct tile *t = env->tile;
     // EARLY EXIT NO WORK TO DO!!!
     if (t->absolute)
         return 1;
@@ -220,11 +220,8 @@ i8 tile_update(void *e, func_queue *queue) {
 	t->possible = t->possible ^ (1 << env->number);
     for (int i = 1; i < 10; i++) {
         if (!(t->possible ^ (1 << i))) {
-            tile_env *t_new = calloc(1, sizeof(tile_env));
+	    tile_env *t_new = gen_tile_env(env->x, env->y, i, &env->grid[env->y][env->x], env->grid);
             if (t_new == NULL) OOM_error();
-            t_new->y = env->y;
-            t_new->x = env->x;
-            t_new->number = i;
             if (enqueue(fq, tile_resolved, t_new) == 0)
                 OOM_error();
             break;
@@ -233,7 +230,7 @@ i8 tile_update(void *e, func_queue *queue) {
     return 1;
 }
 
-void print_grid() {
+void print_grid(struct tile grid[][9]) {
     char *TOP_BOT = "▓▓▓▓▓▓▓▓▓▓▓▓▓\n";
     char *ROW = "▓%i%i%i▒%i%i%i▒%i%i%i▓\n";
     char *MIDDLE = "▓▒▒▒▒▒▒▒▒▒▒▒▓\n";

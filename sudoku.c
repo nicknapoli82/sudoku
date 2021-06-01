@@ -10,7 +10,7 @@
 #define u64 uint64_t
 // TESTING
 u64 count = 0;
-
+u64 max_count = 0;
 struct tile {
     u16 possible; // Bitfield of 9 bits
     i8  absolute;
@@ -103,7 +103,7 @@ int main(void) {
                 printf("Something happened!\n");
                 exit(2);
             }
-	    print_grid();
+//	    print_grid();
         }
         // TODO: Create algorithm array and push on queue
         // For now this is commented as I dont want to push
@@ -118,12 +118,15 @@ int main(void) {
     }
     
     print_grid();
+    printf("%lu\n", max_count);
     free(fQueue);
 }
 
 i8 enqueue(func_queue* self, i8 (*action)(void *, func_queue *), void *env) {
     count++;
-    printf("Count = %lu\n", count);
+    if(count > max_count)
+	max_count = count;
+//    printf("Count = %lu\n", count);
     node_func* n = calloc(1, sizeof(node_func));
     if (n == NULL) return 0;
     n->func = action;
@@ -141,7 +144,7 @@ i8 enqueue(func_queue* self, i8 (*action)(void *, func_queue *), void *env) {
 
 i8 dequeue(func_queue *self) {
     count--;
-    printf("Count = %lu\n", count);
+//    printf("Count = %lu\n", count);
     i8 result = 1;
     if (self->head != NULL)
         result = self->head->func(self->head->env, self);
@@ -158,7 +161,6 @@ i8 tile_resolved(void *e, func_queue *queue) {
     func_queue *fq = queue;
     tile_env *env = e;
     struct tile *t = &grid[env->y][env->x];
-//    printf("called resolve for %i, %i, %i\n", env->number, env->x, env->y);
     t->absolute = env->number;
     t->possible = 0;
     i8 lower_y = env->y - (env->y % 3);
@@ -174,7 +176,7 @@ i8 tile_resolved(void *e, func_queue *queue) {
             t_new->y = t_y;
             t_new->x = t_x;
             t_new->number = env->number;
-            printf("resolved | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
+//            printf("resolved | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
             if (enqueue(fq, tile_update, t_new) == 0)
                 OOM_error();
         }
@@ -188,7 +190,7 @@ i8 tile_resolved(void *e, func_queue *queue) {
             t_new->y = t_y;
             t_new->x = env->x;
             t_new->number = env->number;
-            printf("resolved | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
+//            printf("resolved | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
             if (enqueue(fq, tile_update, t_new) == 0)
                 OOM_error();        
         }
@@ -203,7 +205,7 @@ i8 tile_resolved(void *e, func_queue *queue) {
             t_new->y = env->y;
             t_new->x = t_x;
             t_new->number = env->number;
-            printf("resolved | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
+//            printf("resolved | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
             if (enqueue(fq, tile_update, t_new) == 0)
                 OOM_error();        
         }
@@ -225,10 +227,10 @@ i8 tile_update(void *e, func_queue *queue) {
         if (!(t->possible ^ (1 << i))) {
             tile_env *t_new = calloc(1, sizeof(tile_env));
             if (t_new == NULL) OOM_error();
-            t_new->y = env->x;
-            t_new->x = env->y;
+            t_new->y = env->y;
+            t_new->x = env->x;
             t_new->number = i;
-            printf("update | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
+//            printf("update | IN grid -> enqueue %i, %i, %i\n", t_new->y, t_new->x, t_new->number);
             if (enqueue(fq, tile_resolved, t_new) == 0)
                 OOM_error();
             break;

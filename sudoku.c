@@ -13,6 +13,7 @@ u64 count = 0;
 u64 max_count = 0;
 struct tile {
     u16 possible; // Bitfield of 9 bits
+                  // Default is 0x3fe where number 1 is zero based 1 bit
     i8  absolute;
 };
 
@@ -55,10 +56,16 @@ i8 enqueue(func_queue* self, i8 (*action)(void *, func_queue *), void *env);
 i8 dequeue(func_queue* self);
 i8 tile_resolved(void *, func_queue *);
 i8 tile_update(void *, func_queue *);
+i8 tile_resolveBroadcast(void *, func_queue *);
 void print_grid(struct tile[][9]);
 void OOM_error();
 
+typedef struct solvers_env {
+    struct tile (*grid)[9];    
+}solvers_env;
+
 // Whatever algorithms I want can go here
+i8 solve_possibleElemination(void *, func_queue *);
 //i8(*algos[])(void *);
 
 int main(void) {
@@ -170,6 +177,37 @@ i8 tile_resolved(void *e, func_queue *queue) {
     struct tile *t = env->tile;
     t->absolute = env->number;
     t->possible = 0;
+    tile_env *t_new = gen_tile_env(env->x, env->y, t->absolute, &env->grid[env->y][env->x], env->grid);
+    if (t_new == NULL) OOM_error();
+    if (enqueue(fq, tile_resolveBroadcast, t_new) == 0)
+	OOM_error();    
+    return 1;
+}
+
+i8 tile_update(void *e, func_queue *queue) {
+    func_queue *fq = queue;
+    tile_env *env = e;
+    struct tile *t = env->tile;
+    // EARLY EXIT NO WORK TO DO!!!
+    if (t->absolute)
+        return 1;
+    if (t->possible & (1 << env->number))
+	t->possible = t->possible ^ (1 << env->number);
+    for (int i = 1; i < 10; i++) {
+        if (!(t->possible ^ (1 << i))) {
+	    tile_env *t_new = gen_tile_env(env->x, env->y, i, &env->grid[env->y][env->x], env->grid);
+            if (t_new == NULL) OOM_error();
+            if (enqueue(fq, tile_resolved, t_new) == 0)
+                OOM_error();
+            break;
+        }
+    }
+    return 1;
+}
+
+i8 tile_resolveBroadcast(void *e, func_queue *queue) {
+    func_queue *fq = queue;
+    tile_env *env = e;
     i8 lower_y = env->y - (env->y % 3);
     i8 lower_x = env->x - (env->x % 3);
     i8 upper_y = lower_y + 3;
@@ -209,23 +247,25 @@ i8 tile_resolved(void *e, func_queue *queue) {
     return 1;
 }
 
-i8 tile_update(void *e, func_queue *queue) {
+
+/**********************************************************************/
+/* Algorithms that extend beyond simple column, row, box eleminations */
+/* begin here. 							      */
+/**********************************************************************/
+
+// For each tile, check columns and rows to see if we can
+// resolve more tiles
+// EG: If we find two tiles with only (1, 2) possible
+//     and another with (1, 2, 3) then we know that tile (1, 2, 3)
+//     has to be 3
+i8 solve_possibleElemination(void *e, func_queue *queue) {
     func_queue *fq = queue;
-    tile_env *env = e;
-    struct tile *t = env->tile;
-    // EARLY EXIT NO WORK TO DO!!!
-    if (t->absolute)
-        return 1;
-    if (t->possible & (1 << env->number))
-	t->possible = t->possible ^ (1 << env->number);
-    for (int i = 1; i < 10; i++) {
-        if (!(t->possible ^ (1 << i))) {
-	    tile_env *t_new = gen_tile_env(env->x, env->y, i, &env->grid[env->y][env->x], env->grid);
-            if (t_new == NULL) OOM_error();
-            if (enqueue(fq, tile_resolved, t_new) == 0)
-                OOM_error();
-            break;
-        }
+    solvers_env *env = e;
+    struct tile (*grid)[9] = env->grid;
+    for (int i = 0; i < 9; i++) {
+	for (int j = 0; j < 9; j++) {
+	    
+	}
     }
     return 1;
 }

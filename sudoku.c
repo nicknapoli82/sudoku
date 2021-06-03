@@ -5,6 +5,7 @@
 #include <ctype.h>
 
 #define i8 int8_t
+#define u8 uint8_t
 #define u16 uint16_t
 #define u32 uint32_t
 #define u64 uint64_t
@@ -253,7 +254,7 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
 /* begin here. 							      */
 /**********************************************************************/
 
-// For each tile, check columns and rows to see if we can
+// For each tile, check immediate grid, columns and rows to see if we can
 // resolve more tiles
 // EG: If we find two tiles with only (1, 2) possible
 //     and another with (1, 2, 3) then we know that tile (1, 2, 3)
@@ -262,11 +263,49 @@ i8 solve_possibleElemination(void *e, func_queue *queue) {
     func_queue *fq = queue;
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
-    for (int i = 0; i < 9; i++) {
-	for (int j = 0; j < 9; j++) {
-	    
+    
+    for (u8 y = 0; y < 9; y++) {
+      for (u8 x = 0; x < 9; x++) {
+	// For every tile check immediate grid, column, and row for a matching
+	// mask, if mask matches check if one bit remains based on mask for
+	// immediate grid, column, row
+	u16 tile_mask = grid[y][x].possible;
+	// Count bits in mask to know how many tiles are required
+	// to ensure we know what may be absolute
+	u8 tiles_needed = 0;
+	u8 tiles_found = 0;
+	for (u8 i = 1; i < 10; i++) {
+	  if (tile_mask & (1 < i))
+	    tiles_needed++;
 	}
+	i8 lower_y = y - (y % 3);
+	i8 lower_x = x - (x % 3);
+	i8 upper_y = lower_y + 3;
+	i8 upper_x = lower_x + 3;
+
+	// There should only ever be one tile found considering this strategy
+	struct tile *t_found = NULL;
+
+	// Check columns and rows for matching mask
+	for (u8 y_seek = 0; y_seek < 9 && tiles_found < tiles_needed; y_seek++) {
+	  for (u8 x_seek = 0; x_seek < 9 && tiles_found < tiles_needed; x_seek++) {
+	    if (y_seek != y && x_seek != x && !(tile_mask ^ grid[y_seek][x_seek].possible)) {
+	      tiles_found++;
+	    }
+	  }
+	}
+
+	// Check immediate grid
+	for (u8 y_seek = lower_y; y_seek < upper_y && tiles_found < tiles_needed; y_seek++) {
+	  for (u8 x_seek = lower_x; x_seek < upper_x && tiles_found < tiles_needed; x_seek++) {
+	    // We need to ensure we don't double count. So ignore the row and column inside the
+	    // immediate grid
+	    // pausing here because I need to goto bed
+	  }
+	}
+      }
     }
+
     return 1;
 }
 

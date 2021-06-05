@@ -66,8 +66,9 @@ typedef struct solvers_env {
 }solvers_env;
 
 // Whatever algorithms I want can go here
-i8 solve_possibleElimination(void *, func_queue *);
-i8(*sudoku_solvers[])(void *, func_queue *) = { solve_possibleElimination };
+i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue);
+// i8 solve_possibleElimination(void *, func_queue *);
+i8(*sudoku_solvers[])(void *, func_queue *) = { solve_possibleElimination_immediateGrid };
 
 int main(void) {
     // Function queue, to just pass around and use
@@ -275,8 +276,52 @@ i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue) {
 	    i8 lower_x = x - (x % 3);
 	    i8 upper_y = lower_y + 3;
 	    i8 upper_x = lower_x + 3;
+	    // For every tile check immediate grid
+	    // mask, if mask matches check if one bit remains based on mask for
+	    // immediate grid, column, row
+	    u16 tile_mask = grid[y][x].possible;
+	    // Count bits in mask to know how many tiles are required
+	    // to ensure we know what may be absolute
+	    u8 tiles_needed = 0;
+	    u8 tiles_found = 0;
+	    for (u8 i = 1; i < 10; i++) {
+		if (tile_mask & (1 << i))
+		    tiles_needed++;
+	    }
+
+	    for (u8 y_seek = lower_y; y_seek < upper_y; y_seek++) {
+		for (u8 x_seek = lower_x; x_seek < upper_x && tiles_found < tiles_needed; x_seek++) {
+		    if (!grid[y_seek][x_seek].absolute
+			&& !(tile_mask ^ grid[y_seek][x_seek].possible)) {
+			tiles_found++;
+		    }
+		}
+	    }
+
+	    // If we have an equivalent number of tiles as to what is
+	    // possible in the mask, then we can remove those numbers
+	    // as possible in all other tiles in the immediate grid space
+	    if (tiles_needed == tiles_found) {
+		for (u8 y1 = lower_y; y1 < upper_y; y1++) {
+		    for (u8 x1 = lower_x; x1 < upper_x; x1++) {
+			// Only push tile updates if the bit is set
+			// for each tile
+			u16 check_mask = grid[y1][x1].possible & tile_mask;
+			for (u8 i = 1; i < 10; i++) {
+			    if (check_mask & (1 << i)) {
+				tile_env *new_t = gen_tile_env(x1, y1, i, &grid[y1][x1], grid);
+				if (new_t == NULL) OOM_error();
+				if (enqueue(fq, tile_update, new_t) == 0) {
+				    OOM_error();
+				}
+			    }
+			}
+		    }
+		}
+	    }
 	}
     }
+    return 1;
 }
 
 // For each tile, check immediate grid, columns and rows to see if we can

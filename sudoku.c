@@ -66,8 +66,8 @@ typedef struct solvers_env {
 }solvers_env;
 
 // Whatever algorithms I want can go here
-i8 solve_possibleElemination(void *, func_queue *);
-//i8(*algos[])(void *);
+i8 solve_possibleElimination(void *, func_queue *);
+i8(*sudoku_solvers[])(void *, func_queue *) = { solve_possibleElimination };
 
 int main(void) {
     // Function queue, to just pass around and use
@@ -117,18 +117,22 @@ int main(void) {
         while (fQueue->head != NULL) {
             if (dequeue(fQueue) == 0) {
                 // TODO: Add error reporting if necessary
-                printf("Something happened!\n");
+                printf("Something bad happened!\n");
                 exit(2);
             }
-//	    print_grid();
         }
-        // TODO: Create algorithm array and push on queue
-        // For now this is commented as I dont want to push
-        // nothing
-        // for (u64 i = 0; i < sizeof(*algos) / sizeof(algos[0]); i++) {
-        //    if(enqueue(fQueue, algos[i], NULL) == 0)
-        //        OOM_error();
-        // }
+	
+        for (u64 i = 0; i < sizeof(sudoku_solvers) / sizeof(sudoku_solvers[0]); i++) {
+	    solvers_env *env = malloc(sizeof(solvers_env));
+	    env->grid = grid;
+	    if(enqueue(fQueue, sudoku_solvers[i], env) == 0)
+		OOM_error();
+            if (dequeue(fQueue) == 0) {
+                // TODO: Add error reporting if necessary
+                printf("Something bad happened!\n");
+                exit(2);
+            }
+        }
 
         if (fQueue->head == NULL)
             break;
@@ -250,62 +254,167 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
 
 
 /**********************************************************************/
-/* Algorithms that extend beyond simple column, row, box eleminations */
+/* Algorithms that extend beyond simple column, row, box eliminations */
 /* begin here. 							      */
 /**********************************************************************/
+
+// For each tile, check immediate grid and remove possible as necessary
+// EG: If we find two tiles with only (1, 2) possible
+//     then for all other tiles in that immediate grid we
+//     can eliminate 1 and 2 as possible
+i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue) {
+    func_queue *fq = queue;
+    solvers_env *env = e;
+    struct tile (*grid)[9] = env->grid;
+    for (u8 y = 0; y < 9; y++) {
+	for (u8 x = 0; x < 9; x++) {
+	    // Skip unnecessary tiles
+	    if (grid[y][x].absolute)
+		continue;
+	    i8 lower_y = y - (y % 3);
+	    i8 lower_x = x - (x % 3);
+	    i8 upper_y = lower_y + 3;
+	    i8 upper_x = lower_x + 3;
+	}
+    }
+}
 
 // For each tile, check immediate grid, columns and rows to see if we can
 // resolve more tiles
 // EG: If we find two tiles with only (1, 2) possible
 //     and another with (1, 2, 3) then we know that tile (1, 2, 3)
 //     has to be 3
-i8 solve_possibleElemination(void *e, func_queue *queue) {
+i8 solve_possibleElimination(void *e, func_queue *queue) {
     func_queue *fq = queue;
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
-    
     for (u8 y = 0; y < 9; y++) {
-      for (u8 x = 0; x < 9; x++) {
-	// For every tile check immediate grid, column, and row for a matching
-	// mask, if mask matches check if one bit remains based on mask for
-	// immediate grid, column, row
-	u16 tile_mask = grid[y][x].possible;
-	// Count bits in mask to know how many tiles are required
-	// to ensure we know what may be absolute
-	u8 tiles_needed = 0;
-	u8 tiles_found = 0;
-	for (u8 i = 1; i < 10; i++) {
-	  if (tile_mask & (1 < i))
-	    tiles_needed++;
-	}
-	i8 lower_y = y - (y % 3);
-	i8 lower_x = x - (x % 3);
-	i8 upper_y = lower_y + 3;
-	i8 upper_x = lower_x + 3;
-
-	// There should only ever be one tile found considering this strategy
-	struct tile *t_found = NULL;
-
-	// Check columns and rows for matching mask
-	for (u8 y_seek = 0; y_seek < 9 && tiles_found < tiles_needed; y_seek++) {
-	  for (u8 x_seek = 0; x_seek < 9 && tiles_found < tiles_needed; x_seek++) {
-	    if (y_seek != y && x_seek != x && !(tile_mask ^ grid[y_seek][x_seek].possible)) {
-	      tiles_found++;
+	for (u8 x = 0; x < 9; x++) {
+	    // Skip unnecessary tiles
+	    if (grid[y][x].absolute)
+		continue;
+	    
+	    // For every tile check immediate grid, column, and row for a matching
+	    // mask, if mask matches check if one bit remains based on mask for
+	    // immediate grid, column, row
+	    u16 tile_mask = grid[y][x].possible;
+	    // Count bits in mask to know how many tiles are required
+	    // to ensure we know what may be absolute
+	    u8 tiles_needed = 0;
+	    u8 tiles_found = 1; // Set to 1 to include self
+	    for (u8 i = 1; i < 10; i++) {
+		if (tile_mask & (1 << i))
+		    tiles_needed++;
 	    }
-	  }
-	}
+	    i8 lower_y = y - (y % 3);
+	    i8 lower_x = x - (x % 3);
+	    i8 upper_y = lower_y + 3;
+	    i8 upper_x = lower_x + 3;
 
-	// Check immediate grid
-	for (u8 y_seek = lower_y; y_seek < upper_y && tiles_found < tiles_needed; y_seek++) {
-	  for (u8 x_seek = lower_x; x_seek < upper_x && tiles_found < tiles_needed; x_seek++) {
-	    // We need to ensure we don't double count. So ignore the row and column inside the
-	    // immediate grid
-	    // pausing here because I need to goto bed
-	  }
+	    // I think its easier to check the immediate grid first, because columns
+	    // and rows are so easily defined
+	    // Check immediate grid
+	    for (u8 y_seek = lower_y; y_seek < upper_y; y_seek++) {
+		for (u8 x_seek = lower_x; x_seek < upper_x && tiles_found < tiles_needed; x_seek++) {
+		    if (!grid[y_seek][x_seek].absolute
+			&& !(y_seek == y && x_seek == x)
+			&& !(tile_mask ^ grid[y_seek][x_seek].possible)) {
+			tiles_found++;
+		    }
+		}
+	    }
+
+	    // Check columns for matching mask
+	    for (u8 y_seek = 0; y_seek < 9; y_seek++) {
+		if (!grid[y_seek][x].absolute
+		    && (y_seek < lower_y || y_seek >= upper_y)
+		    && !(tile_mask ^ grid[y_seek][x].possible)) {
+		    tiles_found++;
+		}
+	    }
+	    // Check rows for matching mask
+	    for (u8 x_seek = 0; x_seek < 9; x_seek++) {
+		if (!grid[y][x_seek].absolute
+		    && (x_seek < lower_x || x_seek >= upper_x)
+		    && !(tile_mask ^ grid[y][x_seek].possible)) {
+		    tiles_found++;
+		}
+	    }
+
+	    if (tiles_needed == tiles_found) {
+		// This is basically a repeat of the above loops for immediate grid, columns and rows
+		// The only difference is we apply the mask, and check for a single remaining bit
+		u16 remaining = 0;
+		u8 number = 0;
+		u8 resolve_y = 0;
+		u8 resolve_x = 0;
+		for (u8 y_seek = lower_y; y_seek < upper_y && remaining < 2; y_seek++) {
+		    for (u8 x_seek = lower_x; x_seek < upper_x && remaining < 2; x_seek++) {
+			if (!grid[y_seek][x_seek].absolute
+			    && !(y_seek == y && x_seek == x)) {
+			    u8 count = 0;
+			    u16 extract = tile_mask ^ grid[y_seek][x_seek].possible;
+			    for (u8 i = 1; i < 10 && remaining < 2; i++) {
+				if (extract & (1 << i)) {
+				    count++;
+				    number = i;
+				}
+			    }
+			    if (count == 1) {
+				resolve_y = y_seek;
+				resolve_x = x_seek;
+				remaining++;
+			    }
+			}
+		    }
+		}
+		for (u8 y_seek = 0; y_seek < 9 && remaining < 2; y_seek++) {
+		    if (!grid[y_seek][x].absolute
+			&& (y_seek < lower_y || y_seek >= upper_y)
+			&& !(tile_mask ^ grid[y_seek][x].possible)) {
+			u8 count = 0;
+			u16 extract = tile_mask ^ grid[y_seek][x].possible;
+			for (u8 i = 1; i < 10 && remaining < 2; i++) {
+			    if (extract & (1 << i)) {
+				count++;
+				number = i;
+			    }
+			}
+			if (count == 1) {
+			    resolve_y = y_seek;
+			    resolve_x = x;
+			    remaining++;
+			}
+		    }
+		}
+		for (u8 x_seek = 0; x_seek < 9 && remaining < 2; x_seek++) {
+		    if (!grid[y][x_seek].absolute
+			&& (x_seek < lower_x && x_seek >= upper_x)
+			&& !(tile_mask ^ grid[y][x_seek].possible)) {
+			u8 count = 0;
+			u16 extract = tile_mask ^ grid[y][x_seek].possible;
+			for (u8 i = 1; i < 10 && remaining < 2; i++) {
+			    if (extract & (1 << i)) {
+				count++;
+				number = i;
+			    }
+			}
+			if (count == 1) {
+			    resolve_y = y;
+			    resolve_x = x_seek;
+			    remaining++;
+			}
+		    }
+		}
+
+		if (remaining == 1) {
+		    tile_env *t_new = gen_tile_env(resolve_x, resolve_y, number, &env->grid[resolve_y][resolve_x], env->grid);
+		    enqueue(fq, tile_resolved, t_new);
+		}
+	    }
+
 	}
-      }
     }
-
     return 1;
 }
 

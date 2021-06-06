@@ -263,11 +263,8 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
 // For each tile, check immediate grid, columns and rows to see if we can
 // resolve more tiles
 // EG: If we find two tiles with only (1, 2) possible
-//     and another with (1, 2, 3) then we know that tile (1, 2, 3)
-//     has to be 3
-// All this function does is build constraints for bounds and call
-//     solve_eliminations using the bounds constraints
-
+//     and another with (1, 2, 3) then we know we can
+//     eliminate both 1 and 2 from that additional tile
 i8 eliminate_possible(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_mask,
 		      void *e, func_queue *queue) {
     func_queue *fq = queue;
@@ -319,25 +316,20 @@ i8 eliminate_possible(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_m
     return 1;
 }
 
+// All this function does is build constraints for bounds and call
+//     eliminate_possible using the bounds constraints
 i8 solve_possibleElimination(void *e, func_queue *queue) {
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
-    struct bounds {
-	u8 lower_y;
-	u8 upper_y;
-	u8 lower_x;
-	u8 upper_x;
-    };
 
-    // Bounds for immediate 3x3 grid
     for (u8 y = 0; y < 9; y++) {
 	for(u8 x = 0; x < 9; x++) {
 	    if (grid[y][x].absolute)
 		continue;
 	    u8 lower_y = y - (y % 3);
-	    u8 upper_y = y + 3;
+	    u8 upper_y = lower_y + 3;
 	    u8 lower_x = x - (x % 3);
-	    u8 upper_x = x + 3;
+	    u8 upper_x = lower_x + 3;
 	    // For every tile check immediate grid
 	    // mask, if mask matches check if one bit remains based on mask for
 	    // immediate grid, column, row
@@ -354,75 +346,6 @@ i8 solve_possibleElimination(void *e, func_queue *queue) {
     }
     return 1;
 }
-
-/* // For each tile, check immediate grid and remove possible as necessary */
-/* // EG: If we find two tiles with only (1, 2) possible */
-/* //     then for all other tiles in that immediate grid we */
-/* //     can eliminate 1 and 2 as possible */
-/* i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue) { */
-/*     func_queue *fq = queue; */
-/*     solvers_env *env = e; */
-/*     struct tile (*grid)[9] = env->grid; */
-/*     for (u8 y = 0; y < 9; y++) { */
-/* 	for (u8 x = 0; x < 9; x++) { */
-/* 	    // Skip unnecessary tiles */
-/* 	    if (grid[y][x].absolute) */
-/* 		continue; */
-/* 	    i8 lower_y = y - (y % 3); */
-/* 	    i8 lower_x = x - (x % 3); */
-/* 	    i8 upper_y = lower_y + 3; */
-/* 	    i8 upper_x = lower_x + 3; */
-/* 	    // For every tile check immediate grid */
-/* 	    // mask, if mask matches check if one bit remains based on mask for */
-/* 	    // immediate grid, column, row */
-/* 	    u16 tile_mask = grid[y][x].possible; */
-/* 	    // Count bits in mask to know how many tiles are required */
-/* 	    // to ensure we know what may be absolute */
-/* 	    u8 tiles_needed = 0; */
-/* 	    u8 tiles_found = 0; */
-/* 	    for (u8 i = 1; i < 10; i++) { */
-/* 		if (tile_mask & (1 << i)) */
-/* 		    tiles_needed++; */
-/* 	    } */
-
-/* 	    for (u8 y_seek = lower_y; y_seek < upper_y; y_seek++) { */
-/* 		for (u8 x_seek = lower_x; x_seek < upper_x && tiles_found < tiles_needed; x_seek++) { */
-/* 		    if (!grid[y_seek][x_seek].absolute */
-/* 			&& !(tile_mask ^ grid[y_seek][x_seek].possible)) { */
-/* 			tiles_found++; */
-/* 		    } */
-/* 		} */
-/* 	    } */
-
-/* 	    // If we have an equivalent number of tiles as to what is */
-/* 	    // possible in the mask, then we can remove those numbers */
-/* 	    // as possible in all other tiles in the immediate grid space */
-/* 	    if (tiles_needed == tiles_found) { */
-/* 		for (u8 y1 = lower_y; y1 < upper_y; y1++) { */
-/* 		    for (u8 x1 = lower_x; x1 < upper_x; x1++) { */
-/* 			if ( grid[y1][x1].absolute */
-/* 			    || !(grid[y1][x1].possible ^ tile_mask) ) */
-/* 			    continue; */
-/* 			// Only push tile updates if the bit is set */
-/* 			// for each tile */
-/* 			u16 check_mask = grid[y1][x1].possible & tile_mask; */
-/* 			for (u8 i = 1; i < 10; i++) { */
-/* 			    if (check_mask & (1 << i)) { */
-/* 				tile_env *new_t = gen_tile_env(x1, y1, i, &grid[y1][x1], grid); */
-/* 				if (new_t == NULL) OOM_error(); */
-/* 				if (enqueue(fq, tile_update, new_t) == 0) { */
-/* 				    OOM_error(); */
-/* 				} */
-/* 			    } */
-/* 			} */
-/* 		    } */
-/* 		} */
-/* 	    } */
-/* 	} */
-/*     } */
-/*     return 1; */
-/* } */
-
 
 void print_grid(struct tile grid[][9]) {
     char *TOP_BOT = "▓▓▓▓▓▓▓▓▓▓▓▓▓\n";

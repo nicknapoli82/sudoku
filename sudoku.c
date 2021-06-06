@@ -264,9 +264,11 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
 //     then for all other tiles in that immediate grid we
 //     can eliminate 1 and 2 as possible
 i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue) {
+    printf("eliminate called\n");
     func_queue *fq = queue;
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
+    print_grid(grid);
     for (u8 y = 0; y < 9; y++) {
 	for (u8 x = 0; x < 9; x++) {
 	    // Skip unnecessary tiles
@@ -304,6 +306,9 @@ i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue) {
 	    if (tiles_needed == tiles_found) {
 		for (u8 y1 = lower_y; y1 < upper_y; y1++) {
 		    for (u8 x1 = lower_x; x1 < upper_x; x1++) {
+			if ( grid[y1][x1].absolute
+			    || !(grid[y1][x1].possible ^ tile_mask) )
+			    continue;
 			// Only push tile updates if the bit is set
 			// for each tile
 			u16 check_mask = grid[y1][x1].possible & tile_mask;

@@ -19,8 +19,8 @@ struct tile {
 };
 
 typedef struct tile_env {
-    i8 x;
     i8 y;
+    i8 x;
     i8 number;
     struct tile *tile;
     struct tile (*grid)[9];
@@ -37,6 +37,23 @@ tile_env *gen_tile_env(i8 x, i8 y, i8 number, struct tile *tile, struct tile (*g
     t_env->grid = grid;
     return t_env;
 }
+
+typedef struct list_tile {
+    i8 x;
+    i8 y;
+    struct tile* tile;
+}list_tile;
+
+typedef struct list_tiles {
+    u32 length;
+    list_tile *tiles;
+}list_tiles;
+
+// Creates a list of tiles on the heap and returns a pointer
+// List of tiles generated are within the constraints of x and y
+// and applies the function given to determine inclusion
+list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
+			 u8(*using)(struct tile* tile), struct tile (*grid)[9]);
 
 // NOTE: func(function env, func_queue *)
 typedef struct func_queue func_queue;
@@ -66,9 +83,11 @@ typedef struct solvers_env {
 }solvers_env;
 
 // Whatever algorithms I want can go here
-//i8 solve_possibleElimination_immediateGrid(void *e, func_queue *queue);
-i8 solve_possibleElimination(void *, func_queue *);
-i8(*sudoku_solvers[])(void *, func_queue *) = { solve_possibleElimination };
+i8 solve_possibleSinglehidden(void *, func_queue *);
+i8 solve_possibleGroupOpen(void *, func_queue *);
+i8 solve_numberLinedUpRow(void *e, func_queue *queue);
+i8(*sudoku_solvers[])(void *, func_queue *) = { solve_possibleSinglehidden, solve_possibleGroupOpen, solve_numberLinedUpRow };
+
 
 int main(void) {
     // Function queue, to just pass around and use
@@ -133,6 +152,10 @@ int main(void) {
                 printf("Something bad happened!\n");
                 exit(2);
             }
+	    // If a solver has pushed anything onto the fQ
+	    // Go ahead and run through the queue
+	    if (fQueue->head)
+		break;
         }
 
         if (fQueue->head == NULL)
@@ -265,7 +288,49 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
 // EG: If we find two tiles with only (1, 2) possible
 //     and another with (1, 2, 3) then we know we can
 //     eliminate both 1 and 2 from that additional tile
-i8 eliminate_possible(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_mask,
+i8 solve_possibleSinglehidden(void *e, func_queue *queue) {
+    solvers_env *env = e;
+    struct tile (*grid)[9] = env->grid;
+
+    for (u8 y = 0; y < 9; y++) {
+	for (u8 x = 0; x < 9; x++) {
+	    if ( grid[y][x].absolute )
+		continue;
+	    u8 lower_y = y - (y % 3);
+	    u8 upper_y = lower_y + 3;
+	    u8 lower_x = x - (x % 3);
+	    u8 upper_x = lower_x + 3;
+	    u8 number = 0;
+	    for (u8 i = 1; i < 10 && !number; i++) {
+		u8 elsewhere = 0;
+		if ( grid[y][x].possible & (1 << i) ) {
+		    number = i;
+		    for (u8 y1 = lower_y; y1 < upper_y && !elsewhere; y1++) {
+			for (u8 x1 = lower_x; x1 < upper_x && !elsewhere; x1++) {
+			    if ( !grid[y1][x1].absolute
+				 && !(y == y1 && x == x1)
+				 && grid[y1][x1].possible & (1 << i) ) {
+				elsewhere = 1;
+				number = 0;
+			    }
+			}
+		    }
+		}
+		if ( number ) {
+		    tile_env *new_t = gen_tile_env(x, y, number, &grid[y][x], grid);
+		    if (new_t == NULL) OOM_error();
+		    if (enqueue(queue, tile_resolved, new_t) == 0) {
+			OOM_error();
+		    }
+		    break;
+		}
+	    }
+	}
+    }
+    return 1;
+}
+
+i8 eliminate_possibleGroupOpen(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_mask,
 		      void *e, func_queue *queue) {
     func_queue *fq = queue;
     solvers_env *env = e;
@@ -318,7 +383,7 @@ i8 eliminate_possible(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_m
 
 // All this function does is build constraints for bounds and call
 //     eliminate_possible using the bounds constraints
-i8 solve_possibleElimination(void *e, func_queue *queue) {
+i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
 
@@ -336,14 +401,74 @@ i8 solve_possibleElimination(void *e, func_queue *queue) {
 	    u16 tile_mask = grid[y][x].possible;
 
 	    // Check immediate grid based on this tile position
-	    eliminate_possible(lower_y, upper_y, lower_x, upper_x, tile_mask, e, queue);
+	    eliminate_possibleGroupOpen(lower_y, upper_y, lower_x, upper_x, tile_mask, e, queue);
 	    // Check column
-	    eliminate_possible(0, 9, x, x + 1, tile_mask, e, queue);
+	    eliminate_possibleGroupOpen(0, 9, x, x + 1, tile_mask, e, queue);
 	    // Check row
-	    eliminate_possible(y, y + 1, 0, 9, tile_mask, e, queue);
+	    eliminate_possibleGroupOpen(y, y + 1, 0, 9, tile_mask, e, queue);
 	    
 	}
     }
+    return 1;
+}
+
+
+i8 solve_numberLinedUpRow(void *e, func_queue *queue) {
+    solvers_env *env = e;
+    struct tile (*grid)[9] = env->grid;
+
+    for (u8 y = 0; y < 9; y++) {
+	for (u8 x = 0; x < 9; x++) {
+	    // Inner grid 3x3 limits
+	    u8 lower_y = y - (y % 3);
+	    u8 upper_y = lower_y + 3;
+	    u8 lower_x = x - (x % 3);
+	    u8 upper_x = lower_x + 3;	    
+	    u16 tile_mask = grid[y][x].possible;
+
+	    // For each possible number in this tile
+	    // Check the immediate 3x3 grid and the full rows
+	    // for a match. If the number does not exist
+	    // outside that row, we can eliminate it as possible
+	    // for all tiles outside that row in the immediate grid
+	    for (u8 i = 1; i < 10; i++) {
+		if ( tile_mask & (1 << i) ) {
+		    u8 imm_flag = 0;
+		    u8 row_flag = 0;
+		    // Search the row for a matching possible number
+		    for (u8 row_look = 0; row_look < 9; row_look++) {
+			// Ignore self
+			if ( row_look == x ) 
+			    continue;
+			if ( grid[y][row_look].possible & (1 << i) ) {
+			    if ( row_look < lower_x || row_look >= upper_x ) {
+				row_flag = 1;
+			    }
+			    else imm_flag = 1;
+			}
+		    }
+		    // Based on flags set, we can eliminate possible number
+		    // in the immediate grid
+		    if ( !row_flag  && imm_flag ) {
+			for (u8 y1 = lower_y; y1 < upper_y; y1++) {
+			    if ( y1 == y )
+				continue;
+			    for (u8 x1 = lower_x; x1 < upper_x; x1++) {
+				if ( grid[y1][x1].possible & (1 << 1) ) {
+				    tile_env *new_t = gen_tile_env(x1, y1, i, &grid[y1][x1], grid);
+				    if ( new_t == NULL )
+					OOM_error();
+				    if ( enqueue(queue, tile_update, new_t) == 0 )
+					OOM_error();
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+    
     return 1;
 }
 
@@ -390,4 +515,29 @@ void OOM_error() {
     // Something went wrong and just exit
     printf("Something went wrong. OOM possible\n");
     exit(1);
+}
+
+list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
+			 u8(*using)(struct tile* tile), struct tile (*grid)[9]) {
+    list_tile list[81] = {0};
+    u8 list_cursor = 0;
+    for (u8 y = lower_y; y < upper_y; y++) {
+	for (u8 x = lower_x; x < upper_x; x++) {
+	    if ( using(&grid[y][x]) ) {
+		list[list_cursor].y = y;
+		list[list_cursor].x = x;
+		list[list_cursor].tile = &grid[y][x];
+		list_cursor++;
+	    }
+	}
+    }
+
+    list_tile *result = NULL;
+    if ( list_cursor >0 ) {
+	result = calloc(list_cursor, sizeof(list_tile));
+	if ( result == NULL )
+	    OOM_error();
+	memcpy(result, list, list_cursor);
+    }
+    return (list_tiles){list_cursor, result};
 }

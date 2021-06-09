@@ -9,9 +9,13 @@
 #define u16 uint16_t
 #define u32 uint32_t
 #define u64 uint64_t
+
 // TESTING
+// Just tracks how large the queue grows
+// thorugh execution
 u64 count = 0;
 u64 max_count = 0;
+
 struct tile {
     u16 possible; // Bitfield of 9 bits
                   // Default is 0x3fe where number 1 is zero based 1 bit
@@ -38,24 +42,6 @@ tile_env *gen_tile_env(i8 x, i8 y, i8 number, struct tile *tile, struct tile (*g
     return t_env;
 }
 
-typedef struct list_tile {
-    i8 x;
-    i8 y;
-    struct tile* tile;
-}list_tile;
-
-typedef struct list_tiles {
-    u32 length;
-    list_tile *tiles;
-}list_tiles;
-
-// Creates a list of tiles on the heap and returns a pointer
-// List of tiles generated are within the constraints of x and y
-// and applies the function given to determine inclusion
-list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
-			 u8(*using)(struct tile* tile), struct tile (*grid)[9]);
-
-// NOTE: func(function env, func_queue *)
 typedef struct func_queue func_queue;
 
 typedef struct node_func {
@@ -86,8 +72,10 @@ typedef struct solvers_env {
 i8 solve_possibleSinglehidden(void *, func_queue *);
 i8 solve_possibleGroupOpen(void *, func_queue *);
 i8 solve_numberLinedUpRow(void *e, func_queue *queue);
-i8(*sudoku_solvers[])(void *, func_queue *) = { solve_possibleSinglehidden, solve_possibleGroupOpen, solve_numberLinedUpRow };
-
+i8 solve_numberLinedUpColumn(void *e, func_queue *queue);
+i8(*sudoku_solvers[])(void *, func_queue *) =
+{ solve_possibleSinglehidden, solve_possibleGroupOpen,
+  solve_numberLinedUpRow, solve_numberLinedUpColumn };
 
 int main(void) {
     // Function queue, to just pass around and use
@@ -330,6 +318,10 @@ i8 solve_possibleSinglehidden(void *e, func_queue *queue) {
     return 1;
 }
 
+// Checks possible numbers in each tile
+// If that tiles numbers possible can be singled out
+// in its immediate grid space, we know it
+// is absolutely that number
 i8 eliminate_possibleGroupOpen(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_mask,
 		      void *e, func_queue *queue) {
     func_queue *fq = queue;
@@ -412,8 +404,12 @@ i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
     return 1;
 }
 
+// For each possible number each tile
+// Check the immediate 3x3 grid and the full rows
+// for a match.
+// If the number exists within the immediat grid row
+// but not elsewhere in the immediate grid
 i8 solve_numberLinedUpRow(void *e, func_queue *queue) {
-    printf("Lined up row called\n");
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
 
@@ -426,11 +422,6 @@ i8 solve_numberLinedUpRow(void *e, func_queue *queue) {
 	    u8 lower_x = x - (x % 3);
 	    u8 upper_x = lower_x + 3;	    
 
-	    // For each possible number in this tile
-	    // Check the immediate 3x3 grid and the full rows
-	    // for a match.
-	    // If the number exists within the immediat grid row
-	    // but not elsewhere in the immediate grid
 	    // we can eliminate all possibilities in the rest of the row
 	    for (u8 i = 1; i < 10; i++) {
 		u8 imm_flag_row = 0;
@@ -463,6 +454,70 @@ i8 solve_numberLinedUpRow(void *e, func_queue *queue) {
 			     && (x1 < lower_x || x1 >= upper_x)
 			     && grid[y][x1].possible & (1 << i) ) {
 			    tile_env *new_t = gen_tile_env(x1, y, i, &grid[y][x1], grid);
+			    if ( new_t == NULL )
+				OOM_error();
+			    if ( enqueue(queue, tile_update, new_t) == 0 )
+				OOM_error();			    
+			}
+		    }
+		}
+	    }
+	}
+    }
+    
+    return 1;
+}
+
+// For each possible number each tile
+// Check the immediate 3x3 grid and the full column
+// for a match.
+// If the number exists within the immediat grid column
+// but not elsewhere in the immediate grid
+// we can eliminate all possibilities in the rest of the column
+i8 solve_numberLinedUpColumn(void *e, func_queue *queue) {
+    solvers_env *env = e;
+    struct tile (*grid)[9] = env->grid;
+
+    for (u8 y = 0; y < 9; y++) {
+	for (u8 x = 0; x < 9; x++) {
+	    if ( grid[y][x].absolute )
+		continue;
+	    u8 lower_y = y - (y % 3);
+	    u8 upper_y = lower_y + 3;
+	    u8 lower_x = x - (x % 3);
+	    u8 upper_x = lower_x + 3;	    
+
+	    for (u8 i = 1; i < 10; i++) {
+		u8 imm_flag_row = 0;
+		u8 imm_flag_notRow = 0;
+		if ( grid[y][x].possible & (1 << i) ) {
+		    // Look for a match in the same column immediate grid
+		    for (u8 look = lower_y; look < upper_y; look++) {
+			if ( look != y
+			     && !grid[look][x].absolute
+			     && grid[look][x].possible & (1 << i) ) {
+			    imm_flag_row = 1;
+			}
+		    }
+		    // Look for no matches in separate columns
+		    // within the immediate grid
+		    for (u8 y1 = lower_y; y1 < upper_y && !imm_flag_notRow; y1++) {
+			for (u8 x1 = lower_x; x1 < upper_x && !imm_flag_notRow; x1++) {
+			    if ( x1 == x )
+				continue;
+			    if ( !grid[y1][x1].absolute
+				 && grid[y1][x1].possible & (1 << i) ) {
+				imm_flag_notRow = 1;
+			    }
+			}
+		    }
+		}
+		if ( imm_flag_row && !imm_flag_notRow ) {
+		    for (u8 y1 = 0; y1 < 9; y1++) {
+			if ( !grid[y1][x].absolute
+			     && (y1 < lower_y || y1 >= upper_y)
+			     && grid[y1][x].possible & (1 << i) ) {
+			    tile_env *new_t = gen_tile_env(x, y1, i, &grid[y1][x], grid);
 			    if ( new_t == NULL )
 				OOM_error();
 			    if ( enqueue(queue, tile_update, new_t) == 0 )
@@ -521,6 +576,31 @@ void OOM_error() {
     printf("Something went wrong. OOM possible\n");
     exit(1);
 }
+
+
+/***********************************************************/
+/* I'm entertaining the idea of just operating on the grid */
+/* as through lists. This code does nothing right now for  */
+/* the program. Its only here as reminder to self that I   */
+/* have this opportunity. 				   */
+/***********************************************************/
+
+typedef struct list_tile {
+    i8 x;
+    i8 y;
+    struct tile* tile;
+}list_tile;
+
+typedef struct list_tiles {
+    u32 length;
+    list_tile *tiles;
+}list_tiles;
+
+// Creates a list of tiles on the heap and returns a pointer
+// List of tiles generated are within the constraints of x and y
+// and applies the function given to determine inclusion
+list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
+			 u8(*using)(struct tile* tile), struct tile (*grid)[9]);
 
 list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
 			 u8(*using)(struct tile* tile), struct tile (*grid)[9]) {

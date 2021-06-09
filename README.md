@@ -7,4 +7,4 @@ For me, the actual puzzle was secondary to my entertaining the idea of using a f
 
 The function queue was actually simpler to create than I realized though. So ¯\\_(ツ)_/¯
 
-Regardless. I am able to add solvers as I see fit. 
+The solvers are done intentionally in an procedural manner as a human would solve the puzzles. Eventually this should allow me to classify the difficulty of a given puzzle. Regardless. I am able to add solvers as I see fit. 

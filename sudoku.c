@@ -412,56 +412,61 @@ i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
     return 1;
 }
 
-
 i8 solve_numberLinedUpRow(void *e, func_queue *queue) {
+    printf("Lined up row called\n");
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
 
     for (u8 y = 0; y < 9; y++) {
 	for (u8 x = 0; x < 9; x++) {
-	    // Inner grid 3x3 limits
+	    if ( grid[y][x].absolute )
+		continue;
 	    u8 lower_y = y - (y % 3);
 	    u8 upper_y = lower_y + 3;
 	    u8 lower_x = x - (x % 3);
 	    u8 upper_x = lower_x + 3;	    
-	    u16 tile_mask = grid[y][x].possible;
 
 	    // For each possible number in this tile
 	    // Check the immediate 3x3 grid and the full rows
-	    // for a match. If the number does not exist
-	    // outside that row, we can eliminate it as possible
-	    // for all tiles outside that row in the immediate grid
+	    // for a match.
+	    // If the number exists within the immediat grid row
+	    // but not elsewhere in the immediate grid
+	    // we can eliminate all possibilities in the rest of the row
 	    for (u8 i = 1; i < 10; i++) {
-		if ( tile_mask & (1 << i) ) {
-		    u8 imm_flag = 0;
-		    u8 row_flag = 0;
-		    // Search the row for a matching possible number
-		    for (u8 row_look = 0; row_look < 9; row_look++) {
-			// Ignore self
-			if ( row_look == x ) 
-			    continue;
-			if ( grid[y][row_look].possible & (1 << i) ) {
-			    if ( row_look < lower_x || row_look >= upper_x ) {
-				row_flag = 1;
-			    }
-			    else imm_flag = 1;
+		u8 imm_flag_row = 0;
+		u8 imm_flag_notRow = 0;
+		if ( grid[y][x].possible & (1 << i) ) {
+		    // Look for a match in the same row immediate grid
+		    for (u8 look = lower_x; look < upper_x; look++) {
+			if ( look != x
+			     && !grid[y][look].absolute
+			     && grid[y][look].possible & (1 << i) ) {
+			    imm_flag_row = 1;
 			}
 		    }
-		    // Based on flags set, we can eliminate possible number
-		    // in the immediate grid
-		    if ( !row_flag  && imm_flag ) {
-			for (u8 y1 = lower_y; y1 < upper_y; y1++) {
-			    if ( y1 == y )
-				continue;
-			    for (u8 x1 = lower_x; x1 < upper_x; x1++) {
-				if ( grid[y1][x1].possible & (1 << 1) ) {
-				    tile_env *new_t = gen_tile_env(x1, y1, i, &grid[y1][x1], grid);
-				    if ( new_t == NULL )
-					OOM_error();
-				    if ( enqueue(queue, tile_update, new_t) == 0 )
-					OOM_error();
-				}
+		    // Look for no matches in separate rows
+		    // within the immediate grid
+		    for (u8 y1 = lower_y; y1 < upper_y && !imm_flag_notRow; y1++) {
+			if ( y1 == y )
+			    continue;
+			for (u8 x1 = lower_x; x1 < upper_x && !imm_flag_notRow; x1++) {
+			    if ( !grid[y1][x1].absolute
+				 && grid[y1][x1].possible & (1 << i) ) {
+				imm_flag_notRow = 1;
 			    }
+			}
+		    }
+		}
+		if ( imm_flag_row && !imm_flag_notRow ) {
+		    for (u8 x1 = 0; x1 < 9; x1++) {
+			if ( !grid[y][x1].absolute
+			     && (x1 < lower_x || x1 >= upper_x)
+			     && grid[y][x1].possible & (1 << i) ) {
+			    tile_env *new_t = gen_tile_env(x1, y, i, &grid[y][x1], grid);
+			    if ( new_t == NULL )
+				OOM_error();
+			    if ( enqueue(queue, tile_update, new_t) == 0 )
+				OOM_error();			    
 			}
 		    }
 		}

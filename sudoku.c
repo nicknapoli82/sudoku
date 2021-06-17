@@ -316,24 +316,34 @@ list_tiles tile_lists_concat(list_tiles A, list_tiles B) {
 }
 
 enum TILE_FILTERS { TF_TSN, TF_TN, TF_SN, TF_T, TF_S, TF_N };
+#define FILTERS(ARGS...) ((i8 (*[])()){ARGS})
+#define TF_ENUM(ARGS...) ((enum TILE_FILTERS[]){ARGS})
 
-list_tiles filter_list_tiles(list_tiles *tiles, struct tile *self, u32 number, enum TILE_FILTERS using, i8 (*f)()) {
+list_tiles filter_list_tiles(i8 (*f[])(), enum TILE_FILTERS using[], u32 f_size, list_tiles *tiles, struct tile *self, u32 number) {
     T_List list[9] = {0};
-    u8 list_cursor = 0;
     for (u8 i = 0; i < tiles->length; i++) {
-        i8 test = 0;
-        switch (using) {
-        case TF_TSN: { test = f(tiles->tiles[i], self, number); break; }
-        case TF_TN: { test = f(tiles->tiles[i], number); break; }
-        case TF_SN: { test = f(self, number); break; }
-        case TF_T: { test = f(tiles->tiles[i]); break; }
-        case TF_S: { test = f(self); break; }
-        case TF_N: { test = f(number); break; }
-        }
-        if ( test ) {
-            list[list_cursor] = tiles->tiles[i];
-            list_cursor++;
-        }
+	list[i] = tiles->tiles[i];
+    }
+    u8 list_cursor;
+    u8 t_length = tiles->length;
+    for (u8 fs = 0; fs < f_size; fs++) {
+	list_cursor = 0;
+	for (u8 i = 0; i < t_length; i++) {
+	    i8 test = 0;
+	    switch (using[fs]) {
+	    case TF_TSN: { test = f[fs](list[i], self, number); break; }
+	    case TF_TN: { test = f[fs](list[i], number); break; }
+	    case TF_SN: { test = f[fs](self, number); break; }
+	    case TF_T: { test = f[fs](list[i]); break; }
+	    case TF_S: { test = f[fs](self); break; }
+	    case TF_N: { test = f[fs](number); break; }
+	    }
+	    if ( test ) {
+		list[list_cursor] = list[i];
+		list_cursor++;
+	    }
+	}
+	t_length = list_cursor;
     }
     T_List *result = NULL;
     if ( list_cursor > 0 ) {
@@ -365,7 +375,13 @@ i8 filter_contains_onePossible(T_List T, u32 number) {
     return T.tile->possible & number ? 1 : 0;
 }
 
+i8 filter_remove_row(T_List T, u32 number) {
+    return T.y != number;
+}
 
+i8 filter_remove_column(T_List T, u32 number) {
+    return T.x != number;
+}
 
 i8 tile_resolved(void *e, func_queue *queue) {
     func_queue *fq = queue;
@@ -465,11 +481,11 @@ i8 solve_possibleSinglehidden(void *e, func_queue *queue) {
 		continue;
 	    list_tiles box_list = gen_tile_list(y - (y % 3), y - (y % 3) + 3, x - (x % 3), x - (x % 3) + 3, &grid[y][x], grid);
 	    Allocs_mem_push(box_list.tiles);
-	    box_list = filter_list_tiles(&box_list, NULL, 0, TF_T, filter_not_absolute);
+	    box_list = filter_list_tiles(FILTERS(filter_not_absolute), TF_ENUM(TF_T), 1, &box_list, NULL, 0);
 	    Allocs_mem_push(box_list.tiles);
 	    for (u8 i = 1; i < 10; i++) {
 		if ( grid[y][x].possible & (1 << i) ) {
-		    list_tiles possible = filter_list_tiles(&box_list, NULL, i, TF_TN, filter_is_possible);
+		    list_tiles possible = filter_list_tiles(FILTERS(filter_is_possible), TF_ENUM(TF_TN), 1, &box_list, NULL, i);
 		    Allocs_mem_push(possible.tiles);
 		    if ( possible.length == 0 ) {
 			tile_env *new_t = gen_tile_env(x, y, i, &grid[y][x], grid);
@@ -501,17 +517,17 @@ i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
 		continue;
 	    list_tiles box_list = gen_tile_list(y - (y % 3), y - (y % 3) + 3, x - (x % 3), x - (x % 3) + 3, NULL, grid);
 	    Allocs_mem_push(box_list.tiles);
-	    list_tiles box_match = filter_list_tiles(&box_list, NULL, grid[y][x].possible, TF_TN, filter_possible_match);
+	    list_tiles box_match = filter_list_tiles(FILTERS(filter_possible_match), TF_ENUM(TF_TN), 1, &box_list, NULL, grid[y][x].possible);
 	    Allocs_mem_push(box_match.tiles);
 
 	    list_tiles col_list = gen_tile_list(0, 9, x, x + 1, NULL, grid);
 	    Allocs_mem_push(col_list.tiles);
-	    list_tiles col_match = filter_list_tiles(&col_list, NULL, grid[y][x].possible, TF_TN, filter_possible_match);
+	    list_tiles col_match = filter_list_tiles(FILTERS(filter_possible_match), TF_ENUM(TF_TN), 1, &col_list, NULL, grid[y][x].possible);
 	    Allocs_mem_push(col_match.tiles);
 
 	    list_tiles row_list = gen_tile_list(y, y + 1, 0, 9, NULL, grid);
 	    Allocs_mem_push(row_list.tiles);
-	    list_tiles row_match = filter_list_tiles(&row_list, NULL, grid[y][x].possible, TF_TN, filter_possible_match);
+	    list_tiles row_match = filter_list_tiles(FILTERS(filter_possible_match), TF_ENUM(TF_TN), 1, &row_list, NULL, grid[y][x].possible);
 	    Allocs_mem_push(row_match.tiles);
 	    // Count up how many are possible
 	    u8 tiles_needed = 0;
@@ -522,21 +538,15 @@ i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
 
 	    list_tiles box = {0, 0}, col = {0, 0}, row = {0, 0};
 	    if ( box_match.length == tiles_needed ) {
-		box = filter_list_tiles(&box_list, NULL, grid[y][x].possible, TF_TN, filter_contains_onePossible);
-		Allocs_mem_push(box.tiles);
-		box = filter_list_tiles(&box, NULL, grid[y][x].possible, TF_TN, filter_possible_NotExact);
+		box = filter_list_tiles(FILTERS(filter_contains_onePossible, filter_possible_NotExact), TF_ENUM(TF_TN, TF_TN), 2, &box_list, NULL, grid[y][x].possible);
 		Allocs_mem_push(box.tiles);
 	    }
 	    if ( col_match.length == tiles_needed ) {
-		col = filter_list_tiles(&col_list, NULL, grid[y][x].possible, TF_TN, filter_contains_onePossible);
-		Allocs_mem_push(col.tiles);
-		col = filter_list_tiles(&col, NULL, grid[y][x].possible, TF_TN, filter_possible_NotExact);
+		col = filter_list_tiles(FILTERS(filter_contains_onePossible, filter_possible_NotExact), TF_ENUM(TF_TN, TF_TN), 2, &col_list, NULL, grid[y][x].possible);
 		Allocs_mem_push(col.tiles);
 	    }
 	    if ( row_match.length == tiles_needed ) {
-		row = filter_list_tiles(&row_list, NULL, grid[y][x].possible, TF_TN, filter_contains_onePossible);
-		Allocs_mem_push(row.tiles);
-		row = filter_list_tiles(&row, NULL, grid[y][x].possible, TF_TN, filter_possible_NotExact);
+		row = filter_list_tiles(FILTERS(filter_contains_onePossible, filter_possible_NotExact), TF_ENUM(TF_TN, TF_TN), 2, &row_list, NULL, grid[y][x].possible);
 		Allocs_mem_push(row.tiles);
 	    }
 

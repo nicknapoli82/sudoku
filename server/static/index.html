@@ -9,13 +9,18 @@
     <link rel="icon" href="fav.jpg">
     <link rel="stylesheet" href="styles.css">
     <title>Sudoku!</title>
-    <script src="main.js" defer></script>
+    <script src="main.js" type="module" defer></script>
   </head>
   <body>
     <div id="app">
-      <hr/>
-      <button id="compile" onclick="fetchAPI(this)">Compile</button>
-      <div id="compile-results"></div>
+      <div id="puzzle-space">
+	
+      </div>
+      <div id="dev-space">
+	<hr/>
+	<button id="compile">Compile</button>
+	<div id="compile-results"></div>
+      </div>
     </div>
   </body>
 </html>

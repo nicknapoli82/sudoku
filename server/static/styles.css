@@ -1,4 +1,31 @@
-hr {
+#app {
+    display: flex;
+    flex-direction: column;
+}
+
+#puzzle-space {
+    display: grid;
+    grid-template-columns: repeat(9, 11.1fr);
+    grid-template-rows: repeat(9, 11.1fr);
+    grid-column-gap: 5px;
+    grid-row-gap: 5px;
+    max-height: 60vh;
+    min-height: 60vh;
+    max-width: 60%;;
+}
+
+.tile {
+    background-color: cyan;
+    border: 5px;
+    border-color: black;
+    text-align: center;
+}
+
+#dev-space {
+    height: 20%;
+}
+
+#dev-space hr {
     height: 5px;
     color: red;
     background-color: red;

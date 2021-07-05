@@ -39,7 +39,7 @@ server.on('request', (req, res) => {
     default: { res.setHeader('Content-Type', 'text/plain'); break; }
   }
   try {
-    document.result = fs.readFileSync(path.join(serveStatic, document.base));
+    document.result = fs.readFileSync(path.join(serveStatic, document.dir, document.base));
     res.statusCode = 200;
     console.timeEnd(`Serving: ${req.url}  `);
     res.end(document.result);

@@ -12,6 +12,7 @@
     max-height: 60vh;
     min-height: 60vh;
     max-width: 60%;;
+    background-color: black;
 }
 
 .tile {
@@ -19,6 +20,14 @@
     border: 5px;
     border-color: black;
     text-align: center;
+}
+
+.tile-input {
+    background-color: lightblue;
+}
+
+.tile-invalid {
+    background-color: lightpink;
 }
 
 #dev-space {

@@ -1,6 +1,7 @@
 import fetchAPI from './jsUtils/fetchAPI.js';
 import compile from './jsElems/compile.js';
 import puzzle from './jsElems/puzzleSpace.js';
+import puzzleInput from './jsElems/puzzleInput.js';
 
 // const compileButton = document.getElementById('compile');
 // const compileResults = document.getElementById('compile-results');

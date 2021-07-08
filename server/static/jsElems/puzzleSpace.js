@@ -22,6 +22,14 @@ class Tile {
     return this;
   }
 
+  markInvalid = () => {
+    this.elem.classList.add('tile-invalid');
+  }
+
+  removeInvalid = () => {
+    this.elem.classList.remove('tile-invalid');
+  }
+
   getInput = (key) => {
     this.n = key;
     this.elem.innerText = key;
@@ -40,6 +48,37 @@ const PuzzleSpace = () => {
   }
   let activeTile = tiles[0][0].makeActive();
 
+  function validRowCol(num, was) {
+    const ts = [];
+    const ws = [];
+    const { x, y } = activeTile;
+    for (let yt = 0; yt < 9; yt++) {
+      if (tiles[yt][x].n == num)
+        ts.push(tiles[yt][x]);
+      if (tiles[yt][x].n == was)
+        ws.push(tiles[yt][x]);
+    }
+    for (let xt = 0; xt < 9; xt++) {
+      if (tiles[y][xt].n == num)
+        ts.push(tiles[y][xt]);
+      if (tiles[y][xt].n == was)
+        ws.push(tiles[y][xt]);
+    }
+    if (ts.length > 2) {
+      for (let t of ts) {
+        t.markInvalid();
+      }
+    }
+    else {
+      for (let t of ts) {
+        t.removeInvalid();
+      }
+      for (let w of ws) {
+        w.removeInvalid();
+      }
+    }
+  }
+
   function tilesToString() {
     let result = '';
     for (let i = 0; i < tiles.length; i++) {
@@ -52,11 +91,13 @@ const PuzzleSpace = () => {
 
   function numKeyInput(key) {
     let { x, y } = activeTile;
+    let was = activeTile.n;
     activeTile.getInput(key.key);
     x++;
     if (x === 9 && y === 8) { x = 0; y = 0; };
     if (x === 9) { x = 0; y++; };
     activeTile.makeInactive();
+    validRowCol(key.key, was);
     activeTile = tiles[y][x];
     activeTile.makeActive();
   }

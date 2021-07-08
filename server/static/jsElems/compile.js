@@ -7,6 +7,10 @@ function compileRes(data, error = null) {
   compileResults.innerHTML = `<pre>${error || data.stderr || 'Success'}</pre>`;
 }
 
+function compileKey() {
+  fetchAPI('./api/compile', compileRes)();
+}
+
 compileButton.onclick = fetchAPI('./api/compile', compileRes);
 
-export default { compileButton, compileResults };
+export default { compileKey };

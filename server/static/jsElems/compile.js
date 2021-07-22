@@ -8,9 +8,9 @@ function compileRes(data, error = null) {
 }
 
 function compileKey() {
-  fetchAPI('./api/compile', compileRes)();
+  fetchAPI('./api/compile', 'JSON', compileRes)();
 }
 
-compileButton.onclick = fetchAPI('./api/compile', compileRes);
+compileButton.onclick = fetchAPI('./api/compile', 'JSON', compileRes);
 
 export default { compileKey };

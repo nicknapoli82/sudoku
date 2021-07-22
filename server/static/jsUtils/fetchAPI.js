@@ -1,7 +1,9 @@
-export function fetchAPI(url, cb) {
+export function fetchAPI(url, type = 'JSON', cb) {
   function fetchThen() {
     try {
-      fetch(url, headers).then(response => response.json().then(data => cb(data)));
+      if (type === 'JSON')
+        fetch(url, headers).then(response => response.json().then(data => cb(data)));
+      else fetch(url, headers).then(response => response.text().then(text => cb(text)));
     }
     catch (e) {
       cb(null, e);

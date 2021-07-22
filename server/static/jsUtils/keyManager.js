@@ -14,7 +14,6 @@ KeyManager.prototype.deregisterKeys = function(fun) {
 KeyManager.prototype.keyDown = function(k) {
   for (let i = 0; i < this.keySet.length; i++) {
     if (this.keySet[i].keys.has(k.key)) {
-      k.preventDefault();
       this.keySet[i].fun(k);
     }
   }

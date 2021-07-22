@@ -1,4 +1,5 @@
 import { keyManager } from '../jsUtils/keyManager.js';
+import puzzleInput from './puzzleInput.js';
 
 class Tile {
   constructor(y, x, n = 0) {
@@ -32,13 +33,14 @@ class Tile {
 
   getInput = (key) => {
     this.n = key;
-    this.elem.innerText = key;
+    this.elem.innerText = key || '-';
   }
 }
 
 const PuzzleSpace = () => {
   const elem = document.getElementById("puzzle-space");
   let tiles = new Array(9);
+  let tileClickToggle = true;
   for (let i = 0; i < tiles.length; i++) {
     tiles[i] = new Array(9);
     for (let j = 0; j < tiles[i].length; j++) {
@@ -79,39 +81,50 @@ const PuzzleSpace = () => {
     }
   }
 
-  function tilesToString() {
-    let result = '';
-    for (let i = 0; i < tiles.length; i++) {
-      for (let j = 0; j < tiles[i].length; j++) {
-        result += tiles[i][j].n;
+  function fromString() {
+    let { nums = 0, commonUnset } = puzzleInput.getInputNums();
+    if (nums) {
+      const ts = tiles.flat();
+      for (let i = 0; i < ts.length; i++) {
+        ts[i].getInput(nums[i] === commonUnset ? 0 : nums[i]);
       }
     }
-    return result;
   }
 
   function numKeyInput(key) {
-    let { x, y } = activeTile;
-    let was = activeTile.n;
-    activeTile.getInput(key.key);
-    x++;
-    if (x === 9 && y === 8) { x = 0; y = 0; };
-    if (x === 9) { x = 0; y++; };
-    activeTile.makeInactive();
-    validRowCol(key.key, was);
-    activeTile = tiles[y][x];
-    activeTile.makeActive();
-  }
-
-  function tileClicked(e) {
-    if (e.target.id.slice(0, 4) === 'tile') {
-      let [y, x] = e.target.id.slice(4).split('');
+    if (key.target.id.slice(0, 4) === 'tile') {
+      let { x, y } = activeTile;
+      let was = activeTile.n;
+      activeTile.getInput(key.key);
+      x++;
+      if (x === 9 && y === 8) { x = 0; y = 0; };
+      if (x === 9) { x = 0; y++; };
       activeTile.makeInactive();
+      validRowCol(key.key, was);
       activeTile = tiles[y][x];
       activeTile.makeActive();
     }
   }
 
+  function tileClicked(e) {
+    if (e.target.id.slice(0, 4) === 'tile') {
+      if (!tileClickToggle) {
+        keyManager.registerKeys(tileArrowKey, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab');
+        tileClickToggle = true;
+      }
+      let [y, x] = e.target.id.slice(4).split('');
+      activeTile.makeInactive();
+      activeTile = tiles[y][x];
+      activeTile.makeActive();
+    }
+    else if (tileClickToggle) {
+      keyManager.deregisterKeys(tileArrowKey);
+      tileClickToggle = false;
+    }
+  }
+
   function tileArrowKey(key) {
+    key.preventDefault();
     let { x, y } = activeTile;
     switch (key.key) {
       case 'ArrowUp': { y--; break; }
@@ -137,9 +150,11 @@ const PuzzleSpace = () => {
   keyManager.registerKeys(numKeyInput, '1', '2', '3', '4', '5', '6', '7', '8', '9');
   keyManager.registerKeys(tileArrowKey, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab');
   document.addEventListener('click', tileClicked);
-  return { tilesToString };
+
+  puzzleInput.setInputTiles(tiles);
+  return { fromString };
 };
 
 export const puzzleSpace = PuzzleSpace();
-
+puzzleInput.puzzleInput.addEventListener('change', puzzleSpace.fromString);
 export default { puzzleSpace };

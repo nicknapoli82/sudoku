@@ -13,9 +13,8 @@ const path = require('path');
 const http = require('http');
 const url = require('url');
 const { reqAPI } = require('./api.js');
+const PATHS = require('./dirRoot.js');
 
-const ROOT = path.resolve('..');
-const serveStatic = path.resolve('./static');
 const connection = { hostName: 'localhost', port: 3000 };
 const server = http.createServer();
 
@@ -39,7 +38,7 @@ server.on('request', (req, res) => {
     default: { res.setHeader('Content-Type', 'text/plain'); break; }
   }
   try {
-    document.result = fs.readFileSync(path.join(serveStatic, document.dir, document.base));
+    document.result = fs.readFileSync(path.join(PATHS.static, document.dir, document.base));
     res.statusCode = 200;
     console.timeEnd(`Serving: ${req.url}  `);
     res.end(document.result);

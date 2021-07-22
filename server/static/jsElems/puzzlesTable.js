@@ -39,7 +39,6 @@ const createPuzzles = (data, error = null) => {
     }
   }
   puzzlesTable.appendChild(tbody);
-  console.log(puzzlesTable);
 };
 
 const getPuzzlesAvailable = fetchAPI('./api/getPuzzlesAvailable', 'JSON', createPuzzles)();

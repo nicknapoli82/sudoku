@@ -7,12 +7,10 @@ export const getInputNums = () => {
   const nums = [];
   for (let i = 0; i < puzzleInput.value.length; i++) {
     let n = Number.parseInt(puzzleInput.value[i]);
-    console.log(n, commonUnset);
     if ((!commonUnset && isNaN(n)) || n == 0) {
       commonUnset = puzzleInput.value[i];
     }
     if (n == commonUnset || puzzleInput.value[i] == commonUnset) {
-      console.log("unset!");
       nums.push('0');
       continue;
     }
@@ -20,7 +18,6 @@ export const getInputNums = () => {
       nums.push(puzzleInput.value[i]);
     }
   }
-  console.log(commonUnset, nums.length, nums);
   if (nums.length < 81) {
     console.log("All bad!!!");
     return 0;

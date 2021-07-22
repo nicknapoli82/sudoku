@@ -6,7 +6,6 @@ const puzzlesTable = document.createElement('table');
 const tbody = document.createElement('tbody');
 
 const puzzleRowToggleActive = (e) => {
-  console.log(e.target.nodeName);
   if (e.target.nodeName === 'TR')
     e.target.classList.toggle('puzzle-table-active');
   else if (e.target.nodeName === 'TD') {

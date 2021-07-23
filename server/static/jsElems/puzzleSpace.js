@@ -1,5 +1,5 @@
 import { keyManager } from '../jsUtils/keyManager.js';
-import puzzleInput from './puzzleInput.js';
+import { puzzleInput, subscribeInputChange } from './puzzleInput.js';
 
 class Tile {
   constructor(y, x, n = 0) {
@@ -82,7 +82,7 @@ const PuzzleSpace = () => {
   }
 
   function fromString() {
-    let { nums = 0, commonUnset } = puzzleInput.getInputNums();
+    let { nums = 0, commonUnset } = getInputNums();
     if (nums) {
       const ts = tiles.flat();
       for (let i = 0; i < ts.length; i++) {
@@ -151,10 +151,46 @@ const PuzzleSpace = () => {
   keyManager.registerKeys(tileArrowKey, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab');
   document.addEventListener('click', tileClicked);
 
-  puzzleInput.setInputTiles(tiles);
+  setInputTiles(tiles);
   return { fromString };
 };
 
+const getInputNums = () => {
+  let commonUnset = null;
+  const nums = [];
+  for (let i = 0; i < puzzleInput.value.length; i++) {
+    let n = Number.parseInt(puzzleInput.value[i]);
+    if ((!commonUnset && isNaN(n)) || n == 0) {
+      commonUnset = puzzleInput.value[i];
+    }
+    if (n == commonUnset || puzzleInput.value[i] == commonUnset) {
+      nums.push('0');
+      continue;
+    }
+    if (n) {
+      nums.push(puzzleInput.value[i]);
+    }
+  }
+  if (nums.length < 81) {
+    console.log("All bad!!!");
+    return 0;
+  }
+
+
+  return { nums, commonUnset };
+};
+
+const setInputTiles = (tiles) => {
+  let result = [];
+  for (let y = 0; y < 9; y++) {
+    for (let x = 0; x < 9; x++) {
+      result.push(tiles[y][x].n);
+    }
+  }
+  puzzleInput.value = result.join('');
+};
+
 export const puzzleSpace = PuzzleSpace();
-puzzleInput.puzzleInput.addEventListener('change', puzzleSpace.fromString);
+subscribeInputChange(puzzleSpace.fromString);
+
 export default { puzzleSpace };

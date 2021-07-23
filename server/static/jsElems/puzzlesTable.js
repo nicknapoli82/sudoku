@@ -1,6 +1,6 @@
 import { fetchAPI } from '../jsUtils/fetchAPI.js';
-import { puzzleInput } from './puzzleInput.js';
-import { puzzleSpace } from './puzzleSpace.js';
+import puzzleInput from './puzzleInput.js';
+//import { puzzleSpace } from './puzzleSpace.js';
 
 const puzzlesTable = document.createElement('table');
 const tbody = document.createElement('tbody');
@@ -9,8 +9,8 @@ const puzzleRowToggleActive = (e) => {
   if (e.target.nodeName === 'TR')
     e.target.classList.toggle('puzzle-table-active');
   else if (e.target.nodeName === 'TD') {
-    puzzleInput.value = e.target.value;
-    puzzleSpace.fromString(e.target.value);
+    puzzleInput.setInputIO(e.target.value);
+    //    puzzleSpace.fromString(e.target.value);
   }
 };
 

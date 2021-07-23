@@ -1,9 +1,9 @@
 const path = require('path');
 
 const PATHS = {
-  server: require.main.path,
-  root: require.main.path.split('/').slice(0, -1).join('/'),
-  static: require.main.path + '/static'
+  server: path.dirname(require.main.filename),
+  root: path.dirname(require.main.filename).split('/').slice(0, -1).join('/'),
+  static: path.dirname(require.main.filename) + '/static'
 };
 
 module.exports = PATHS;

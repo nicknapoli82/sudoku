@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Fun with Sudoku">
+    <meta name="author" content="Nicholas Napoli">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="fav.jpg">
+    <link rel="stylesheet" href="styles.css">
+    <title>Sudoku!</title>
+    <script src="main.js" type="module" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <div id="mid-space">
+	<div id="puzzle-space">
+	</div>
+	<div id="puzzles-context">
+	  <div id="context-header">
+	    <span>
+	      <button>Puzzles</button>
+	      <i id="help-button" style="font-size:24px">&#x1f6c8;</i>
+	    </span>
+	  </div>
+	</div>
+      </div>
+      <div id="user-Input">
+	<input id="puzzle-IO"></input>
+	<button id="solve-puzzle">Solve Puzzle</button>
+      </div>
+      <div id="dev-space">
+	<hr/>
+	<button id="compile">Compile</button>
+	<div id="compile-results"></div>
+      </div>
+    </div>
+  </body>
+</html>

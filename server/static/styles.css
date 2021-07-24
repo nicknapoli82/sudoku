@@ -1,0 +1,122 @@
+#app {
+    display: flex;
+    flex-direction: column;
+}
+
+#puzzle-space {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    max-height: 60vh;
+    min-height: 60vh;
+    min-width: 60%;
+    max-width: 60%;
+    background-color: black;
+    border-style: solid;
+    border-color: gray;
+    border-width: 10px;
+    border-radius: 20px;
+
+}
+
+#puzzle-space div {
+    border: 2px solid black;
+}
+
+#puzzle-space div:nth-child(3n+3):not(:nth-child(9n+9)) {
+    border-right: 5px solid gray;
+}
+
+#puzzle-space div:nth-child(3n+3):not(:nth-child(9n+9)) + div {
+    border-left: 5px solid gray;
+}
+
+#puzzle-space div:nth-child(1n+19):nth-child(-1n+27) {
+    border-bottom: 5px solid gray;
+}
+
+#puzzle-space div:nth-child(1n+28):nth-child(-1n+36) {
+    border-top: 5px solid gray;
+}
+
+#puzzle-space div:nth-child(1n+46):nth-child(-1n+54) {
+    border-bottom: 5px solid gray;
+}
+
+#puzzle-space div:nth-child(1n+55):nth-child(-1n+63) {
+    border-top: 5px solid gray;
+}
+
+#mid-space {
+    display: flex;
+    flex-direction: row;
+}
+
+.tile {
+    background-color: cyan;
+    border: 5px;
+    border-color: black;
+    text-align: center;
+}
+
+.tile-input {
+    background-color: lightblue;
+}
+
+.tile-invalid {
+    background-color: lightpink;
+}
+
+#dev-space {
+    height: 20%;
+}
+
+#dev-space hr {
+    height: 5px;
+    color: red;
+    background-color: red;
+}
+
+.help {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    background-color: black;
+    color: white;
+    min-height: 80%;
+    max-height: 80%;
+    min-width: 80%;
+    max-width: 80%;
+    padding: 30px;
+    border: 5px solid purple;
+}
+
+#puzzles-context {
+    overflow: auto;
+    float: none;
+    width: 100%;
+    max-height: 60vh;
+}
+
+.puzzles-tr{
+    background-color: black;
+    color: white;
+    display: block;
+    padding: 15px;
+    padding: 15px;
+}
+
+.puzzles-tr td {
+    background-color: white;
+    color: black;
+    display: block;
+    border: 1px solid blue;
+}
+
+.puzzle-table-active td {
+    display: none;
+}
+
+#user-Input input {
+    width: 60vh;
+}

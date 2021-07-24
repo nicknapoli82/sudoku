@@ -1,5 +1,7 @@
 export function fetchAPI(url, type = 'JSON', cb) {
-  function fetchThen() {
+  function fetchThen(body = null) {
+    if (body)
+      headers.body = JSON.stringify(body);
     try {
       if (type === 'JSON')
         fetch(url, headers).then(response => response.json().then(data => cb(data)));
@@ -17,7 +19,7 @@ export function fetchAPI(url, type = 'JSON', cb) {
     credentials: 'same-origin',
     referrerPolicy: 'no-referrer',
   };
-  return () => fetchThen();
+  return (body) => fetchThen(body);
 }
 
 export default fetchAPI;

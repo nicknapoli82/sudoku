@@ -11,6 +11,7 @@ function reqAPI(req, res, route) {
   switch (route) {
     case 'compile': { compileAndRes(res); break; }
     case 'getPuzzlesAvailable': { getPuzzlesAvailable(res); break; }
+    case 'solvePuzzle': { solvePuzzle(req, res); break; }
   }
 }
 
@@ -60,6 +61,20 @@ function getPuzzlesAvailable(res) {
   }
 
   findPuzzles(PATHS.root + '/puzzles');
+}
+
+function solvePuzzle(req, res) {
+  let data = [];
+  req.on('data', chunk => {
+    data.push(chunk);
+  });
+  req.on('end', () => {
+    data = data.map((b) => JSON.parse(b)).join();
+    exec(`echo ${data} | ${PATHS.root}/sudoku`, (error, stdout, stderr) => {
+      const result = { error, stdout, stderr };
+      res.end(JSON.stringify(result));
+    });
+  });
 }
 
 module.exports = { reqAPI };

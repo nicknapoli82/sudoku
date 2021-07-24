@@ -20,10 +20,10 @@ const server = http.createServer();
 
 server.on('request', (req, res) => {
   console.time(`Serving: ${req.url}  `);
+  res.on('finish', () => console.timeEnd(`Serving: ${req.url}  `));
   let document = path.parse(req.url);
   if (document.dir === '/api') {
     reqAPI(req, res, document.base);
-    console.timeEnd(`Serving: ${req.url}  `);
     return;
   }
   if (req.url === '/') {
@@ -40,12 +40,10 @@ server.on('request', (req, res) => {
   try {
     document.result = fs.readFileSync(path.join(PATHS.static, document.dir, document.base));
     res.statusCode = 200;
-    console.timeEnd(`Serving: ${req.url}  `);
     res.end(document.result);
   }
   catch (e) {
     res.statusCode = 404;
-    console.timeEnd(`Serving: ${req.url}  `);
     console.log(`Failed!!! ${e}`);
     res.end(e.toString());
   }

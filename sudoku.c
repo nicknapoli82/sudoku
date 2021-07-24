@@ -77,77 +77,6 @@ i8(*sudoku_solvers[])(void *, func_queue *) =
 { solve_possibleSinglehidden, solve_possibleGroupOpen,
   solve_numberLinedUpRow, solve_numberLinedUpColumn };
 
-/*********************************************************/
-/* Handles local scope allocations for whatever you want */
-/* Frees them at end of function                         */
-/* Just pair Allocs_push with Allocs_pop                 */
-/*********************************************************/
-typedef struct s_Points {
-    void **points;
-    u32 cursor;
-    u32 length;
-}s_Points;
-
-typedef struct s_Allocs {
-    s_Points **points;
-    u32 cursor;
-    u32 length;
-}s_Allocs;
-
-s_Allocs Allocs;
-
-void Allocs_push(void) {
-    if ( Allocs.cursor == Allocs.length ) {
-        Allocs.points = realloc(Allocs.points, sizeof(void*) * (Allocs.length + 4));
-        if ( Allocs.points == NULL )
-            OOM_error();
-        memset(Allocs.points + Allocs.length, 0, sizeof(void *) * 4);
-        Allocs.length += 4;
-    }
-    if ( Allocs.points[0] != NULL )
-        Allocs.cursor++;
-}
-
-void Allocs_pop() {
-    if ( Allocs.points[Allocs.cursor] ) {
-        s_Points *loc = Allocs.points[Allocs.cursor];
-        for (u32 i = 0; i < loc->cursor; i++) {
-            free(loc->points[i]);
-            loc->points[i] = NULL;
-        }
-        free(loc->points);
-        loc->cursor = 0;
-        loc->length = 0;
-
-        free(Allocs.points[Allocs.cursor]);
-        Allocs.points[Allocs.cursor] = NULL;
-    }
-    if ( Allocs.cursor == 0 ) {
-        free(Allocs.points);
-        Allocs.points = NULL;
-        Allocs.length = 0;
-    }
-    if ( Allocs.cursor > 0)
-        Allocs.cursor--;
-}
-
-void* Allocs_mem_push(void *a) {
-    if ( Allocs.points[Allocs.cursor] == NULL ) {
-        Allocs.points[Allocs.cursor] = calloc(1, sizeof(s_Points));
-    }
-    s_Points *loc = Allocs.points[Allocs.cursor];
-    if ( loc->cursor == loc->length ) {
-        loc->points = realloc(loc->points, sizeof(void*) * (loc->length + 8));
-        if ( loc->points == NULL )
-            OOM_error();
-        memset(loc->points + loc->length, 0, sizeof(void *) * 8);
-        loc->length += 8;
-    }
-    loc->points[loc->cursor] = a;
-    loc->cursor++;
-    return a;
-}
-
 int main(void) {
     // Function queue, to just pass around and use
     func_queue *fQueue = calloc(1, sizeof(func_queue));
@@ -259,130 +188,6 @@ i8 dequeue(func_queue *self) {
     return result;
 }
 
-/***********************************************************/
-/* I'm entertaining the idea of just operating on the grid */
-/* as through lists. This code does nothing right now for  */
-/* the program. Its only here as reminder to self that I   */
-/* have this opportunity. 				   */
-/***********************************************************/
-
-typedef struct T_List {
-    u8 x;
-    u8 y;
-    struct tile* tile;
-}T_List;
-
-typedef struct list_tiles {
-    u32 length;
-    T_List *tiles;
-}list_tiles;
-
-// Creates a list of tiles on the heap and returns a pointer
-// List of tiles generated are within the constraints of x and y
-// and applies the function given to determine inclusion
-// Max size of the list should be 9
-list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
-			 void* discluding, struct tile (*grid)[9]) {
-    T_List list[9] = {0};
-    u8 list_cursor = 0;
-    for (u8 y = lower_y; y < upper_y; y++) {
-	for (u8 x = lower_x; x < upper_x; x++) {
-	    if ( discluding != &grid[y][x] ) {
-		list[list_cursor].y = y;
-		list[list_cursor].x = x;
-		list[list_cursor].tile = &grid[y][x];
-		list_cursor++;
-	    }
-	}
-    }
-
-    T_List *result = NULL;
-    if ( list_cursor > 0 ) {
-	result = calloc(list_cursor, sizeof(T_List) * list_cursor);
-	if ( result == NULL )
-	    OOM_error();
-	memcpy(result, list, sizeof(T_List) * list_cursor);
-    }
-    return (list_tiles){list_cursor, result};
-}
-
-list_tiles tile_lists_concat(list_tiles A, list_tiles B) {
-    T_List *result = calloc(sizeof(T_List), A.length + B.length);
-    if ( result == NULL )
-	OOM_error();
-    memcpy(result, A.tiles, sizeof(T_List) * A.length);
-    memcpy(&result[A.length], B.tiles, sizeof(T_List) * B.length);
-    return (list_tiles){A.length + B.length, result};
-}
-
-enum TILE_FILTERS { TF_TSN, TF_TN, TF_SN, TF_T, TF_S, TF_N };
-#define FILTERS(ARGS...) ((i8 (*[])()){ARGS})
-#define TF_ENUM(ARGS...) ((enum TILE_FILTERS[]){ARGS})
-
-list_tiles filter_list_tiles(i8 (*f[])(), enum TILE_FILTERS using[], u32 f_size, list_tiles *tiles, struct tile *self, u32 number) {
-    T_List list[9] = {0};
-    for (u8 i = 0; i < tiles->length; i++) {
-	list[i] = tiles->tiles[i];
-    }
-    u8 list_cursor;
-    u8 t_length = tiles->length;
-    for (u8 fs = 0; fs < f_size; fs++) {
-	list_cursor = 0;
-	for (u8 i = 0; i < t_length; i++) {
-	    i8 test = 0;
-	    switch (using[fs]) {
-	    case TF_TSN: { test = f[fs](list[i], self, number); break; }
-	    case TF_TN: { test = f[fs](list[i], number); break; }
-	    case TF_SN: { test = f[fs](self, number); break; }
-	    case TF_T: { test = f[fs](list[i]); break; }
-	    case TF_S: { test = f[fs](self); break; }
-	    case TF_N: { test = f[fs](number); break; }
-	    }
-	    if ( test ) {
-		list[list_cursor] = list[i];
-		list_cursor++;
-	    }
-	}
-	t_length = list_cursor;
-    }
-    T_List *result = NULL;
-    if ( list_cursor > 0 ) {
-        result = calloc(list_cursor, sizeof(T_List) * list_cursor);
-        if ( result == NULL )
-            OOM_error();
-        memcpy(result, list, sizeof(T_List) * list_cursor);
-    }
-    return (list_tiles){list_cursor, result};
-}
-
-i8 filter_not_absolute(T_List T) {
-    return !T.tile->absolute;
-}
-
-i8 filter_possible_match(T_List T, u32 number) {
-    return !(T.tile->possible ^ number) ? 1 : 0;
-}
-
-i8 filter_possible_NotExact(T_List T, u32 number) {
-    return T.tile->possible ^ number ? 1 : 0;
-}
-
-i8 filter_is_possible(T_List T, u32 number) {
-    return T.tile->possible & (1 << number) ? 1 : 0;
-}
-
-i8 filter_contains_onePossible(T_List T, u32 number) {
-    return T.tile->possible & number ? 1 : 0;
-}
-
-i8 filter_remove_row(T_List T, u32 number) {
-    return T.y != number;
-}
-
-i8 filter_remove_column(T_List T, u32 number) {
-    return T.x != number;
-}
-
 i8 tile_resolved(void *e, func_queue *queue) {
     func_queue *fq = queue;
     tile_env *env = e;
@@ -459,6 +264,7 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
     return 1;
 }
 
+
 /**********************************************************************/
 /* Algorithms that extend beyond simple column, row, box eliminations */
 /* begin here. 							      */
@@ -471,7 +277,6 @@ i8 tile_resolveBroadcast(void *e, func_queue *queue) {
 //     and another with (1, 2, 3) then we know we can
 //     eliminate both 1 and 2 from that additional tile
 i8 solve_possibleSinglehidden(void *e, func_queue *queue) {
-    Allocs_push();
     solvers_env *env = e;
     struct tile (*grid)[9] = env->grid;
 
@@ -479,27 +284,37 @@ i8 solve_possibleSinglehidden(void *e, func_queue *queue) {
 	for (u8 x = 0; x < 9; x++) {
 	    if ( grid[y][x].absolute )
 		continue;
-	    list_tiles box_list = gen_tile_list(y - (y % 3), y - (y % 3) + 3, x - (x % 3), x - (x % 3) + 3, &grid[y][x], grid);
-	    Allocs_mem_push(box_list.tiles);
-	    box_list = filter_list_tiles(FILTERS(filter_not_absolute), TF_ENUM(TF_T), 1, &box_list, NULL, 0);
-	    Allocs_mem_push(box_list.tiles);
-	    for (u8 i = 1; i < 10; i++) {
+	    u8 lower_y = y - (y % 3);
+	    u8 upper_y = lower_y + 3;
+	    u8 lower_x = x - (x % 3);
+	    u8 upper_x = lower_x + 3;
+	    u8 number = 0;
+	    for (u8 i = 1; i < 10 && !number; i++) {
+		u8 elsewhere = 0;
 		if ( grid[y][x].possible & (1 << i) ) {
-		    list_tiles possible = filter_list_tiles(FILTERS(filter_is_possible), TF_ENUM(TF_TN), 1, &box_list, NULL, i);
-		    Allocs_mem_push(possible.tiles);
-		    if ( possible.length == 0 ) {
-			tile_env *new_t = gen_tile_env(x, y, i, &grid[y][x], grid);
-			if (new_t == NULL) OOM_error();
-			if (enqueue(queue, tile_resolved, new_t) == 0) {
-			    OOM_error();
-			}			
-			break;
+		    number = i;
+		    for (u8 y1 = lower_y; y1 < upper_y && !elsewhere; y1++) {
+			for (u8 x1 = lower_x; x1 < upper_x && !elsewhere; x1++) {
+			    if ( !grid[y1][x1].absolute
+				 && !(y == y1 && x == x1)
+				 && grid[y1][x1].possible & (1 << i) ) {
+				elsewhere = 1;
+				number = 0;
+			    }
+			}
 		    }
+		}
+		if ( number ) {
+		    tile_env *new_t = gen_tile_env(x, y, number, &grid[y][x], grid);
+		    if (new_t == NULL) OOM_error();
+		    if (enqueue(queue, tile_resolved, new_t) == 0) {
+			OOM_error();
+		    }
+		    break;
 		}
 	    }
 	}
     }
-    Allocs_pop();
     return 1;
 }
 
@@ -507,68 +322,85 @@ i8 solve_possibleSinglehidden(void *e, func_queue *queue) {
 // If that tiles numbers possible can be singled out
 // in its immediate grid space, we know it
 // is absolutely that number
-i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
-    Allocs_push();
+i8 eliminate_possibleGroupOpen(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x, u16 tile_mask,
+		      void *e, func_queue *queue) {
+    func_queue *fq = queue;
     solvers_env *env = e;
-    struct tile (*grid)[9] = env->grid;
-    for (u8 y = 0; y < 9; y++) {
-	for(u8 x = 0; x < 9; x++) {
-	    if (grid[y][x].absolute)
-		continue;
-	    list_tiles box_list = gen_tile_list(y - (y % 3), y - (y % 3) + 3, x - (x % 3), x - (x % 3) + 3, NULL, grid);
-	    Allocs_mem_push(box_list.tiles);
-	    list_tiles box_match = filter_list_tiles(FILTERS(filter_possible_match), TF_ENUM(TF_TN), 1, &box_list, NULL, grid[y][x].possible);
-	    Allocs_mem_push(box_match.tiles);
+    struct tile (*grid)[9] = env->grid;    
 
-	    list_tiles col_list = gen_tile_list(0, 9, x, x + 1, NULL, grid);
-	    Allocs_mem_push(col_list.tiles);
-	    list_tiles col_match = filter_list_tiles(FILTERS(filter_possible_match), TF_ENUM(TF_TN), 1, &col_list, NULL, grid[y][x].possible);
-	    Allocs_mem_push(col_match.tiles);
+    // Count bits in mask to know how many tiles are required
+    // to ensure we know what may be absolute
+    u8 tiles_needed = 0;
+    u8 tiles_found = 0;
+    for (u8 i = 1; i < 10; i++) {
+	if (tile_mask & (1 << i))
+	    tiles_needed++;
+    }
 
-	    list_tiles row_list = gen_tile_list(y, y + 1, 0, 9, NULL, grid);
-	    Allocs_mem_push(row_list.tiles);
-	    list_tiles row_match = filter_list_tiles(FILTERS(filter_possible_match), TF_ENUM(TF_TN), 1, &row_list, NULL, grid[y][x].possible);
-	    Allocs_mem_push(row_match.tiles);
-	    // Count up how many are possible
-	    u8 tiles_needed = 0;
-	    for (u8 i = 1; i < 10; i++) {
-		if (grid[y][x].possible & (1 << i))
-		    tiles_needed++;
+    for (u8 y_seek = lower_y; y_seek < upper_y; y_seek++) {
+	for (u8 x_seek = lower_x; x_seek < upper_x && tiles_found < tiles_needed; x_seek++) {
+	    if (!grid[y_seek][x_seek].absolute
+		&& !(tile_mask ^ grid[y_seek][x_seek].possible)) {
+		tiles_found++;
 	    }
+	}
+    }
 
-	    list_tiles box = {0, 0}, col = {0, 0}, row = {0, 0};
-	    if ( box_match.length == tiles_needed ) {
-		box = filter_list_tiles(FILTERS(filter_contains_onePossible, filter_possible_NotExact), TF_ENUM(TF_TN, TF_TN), 2, &box_list, NULL, grid[y][x].possible);
-		Allocs_mem_push(box.tiles);
-	    }
-	    if ( col_match.length == tiles_needed ) {
-		col = filter_list_tiles(FILTERS(filter_contains_onePossible, filter_possible_NotExact), TF_ENUM(TF_TN, TF_TN), 2, &col_list, NULL, grid[y][x].possible);
-		Allocs_mem_push(col.tiles);
-	    }
-	    if ( row_match.length == tiles_needed ) {
-		row = filter_list_tiles(FILTERS(filter_contains_onePossible, filter_possible_NotExact), TF_ENUM(TF_TN, TF_TN), 2, &row_list, NULL, grid[y][x].possible);
-		Allocs_mem_push(row.tiles);
-	    }
-
-	    list_tiles result = tile_lists_concat(box, col);
-	    Allocs_mem_push(result.tiles);
-	    result = tile_lists_concat(result, row);
-	    Allocs_mem_push(result.tiles);	    
-	    
-	    for (u32 t= 0; t < result.length; t++ ) {
-		for (u8 i = 1; i < 10; i ++) {
-		    if ((result.tiles[t].tile->possible & grid[y][x].possible) & (1 << i)) {
-			tile_env *new_t = gen_tile_env(result.tiles[t].x, result.tiles[t].y, i, result.tiles[t].tile, grid);
+    // If we have an equivalent number of tiles as to what is
+    // possible in the mask, then we can remove those numbers
+    // as possible in all other tiles in the immediate grid space
+    if (tiles_needed == tiles_found) {
+	for (u8 y1 = lower_y; y1 < upper_y; y1++) {
+	    for (u8 x1 = lower_x; x1 < upper_x; x1++) {
+		if ( grid[y1][x1].absolute
+		     || !(grid[y1][x1].possible ^ tile_mask) )
+		    continue;
+		// Only push tile updates if the bit is set
+		// for each tile
+		u16 check_mask = grid[y1][x1].possible & tile_mask;
+		for (u8 i = 1; i < 10; i++) {
+		    if (check_mask & (1 << i)) {
+			tile_env *new_t = gen_tile_env(x1, y1, i, &grid[y1][x1], grid);
 			if (new_t == NULL) OOM_error();
-			if (enqueue(queue, tile_update, new_t) == 0) {
+			if (enqueue(fq, tile_update, new_t) == 0) {
 			    OOM_error();
-			}			
+			}
 		    }
 		}
 	    }
 	}
     }
-    Allocs_pop();
+    return 1;
+}
+
+// All this function does is build constraints for bounds and call
+//     eliminate_possible using the bounds constraints
+i8 solve_possibleGroupOpen(void *e, func_queue *queue) {
+    solvers_env *env = e;
+    struct tile (*grid)[9] = env->grid;
+
+    for (u8 y = 0; y < 9; y++) {
+	for(u8 x = 0; x < 9; x++) {
+	    if (grid[y][x].absolute)
+		continue;
+	    u8 lower_y = y - (y % 3);
+	    u8 upper_y = lower_y + 3;
+	    u8 lower_x = x - (x % 3);
+	    u8 upper_x = lower_x + 3;
+	    // For every tile check immediate grid
+	    // mask, if mask matches check if one bit remains based on mask for
+	    // immediate grid, column, row
+	    u16 tile_mask = grid[y][x].possible;
+
+	    // Check immediate grid based on this tile position
+	    eliminate_possibleGroupOpen(lower_y, upper_y, lower_x, upper_x, tile_mask, e, queue);
+	    // Check column
+	    eliminate_possibleGroupOpen(0, 9, x, x + 1, tile_mask, e, queue);
+	    // Check row
+	    eliminate_possibleGroupOpen(y, y + 1, 0, 9, tile_mask, e, queue);
+	    
+	}
+    }
     return 1;
 }
 
@@ -743,4 +575,54 @@ void OOM_error() {
     // Something went wrong and just exit
     printf("Something went wrong. OOM possible\n");
     exit(1);
+}
+
+
+/***********************************************************/
+/* I'm entertaining the idea of just operating on the grid */
+/* as through lists. This code does nothing right now for  */
+/* the program. Its only here as reminder to self that I   */
+/* have this opportunity. 				   */
+/***********************************************************/
+
+typedef struct list_tile {
+    i8 x;
+    i8 y;
+    struct tile* tile;
+}list_tile;
+
+typedef struct list_tiles {
+    u32 length;
+    list_tile *tiles;
+}list_tiles;
+
+// Creates a list of tiles on the heap and returns a pointer
+// List of tiles generated are within the constraints of x and y
+// and applies the function given to determine inclusion
+list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
+			 u8(*using)(struct tile* tile), struct tile (*grid)[9]);
+
+list_tiles gen_tile_list(u8 lower_y, u8 upper_y, u8 lower_x, u8 upper_x,
+			 u8(*using)(struct tile* tile), struct tile (*grid)[9]) {
+    list_tile list[81] = {0};
+    u8 list_cursor = 0;
+    for (u8 y = lower_y; y < upper_y; y++) {
+	for (u8 x = lower_x; x < upper_x; x++) {
+	    if ( using(&grid[y][x]) ) {
+		list[list_cursor].y = y;
+		list[list_cursor].x = x;
+		list[list_cursor].tile = &grid[y][x];
+		list_cursor++;
+	    }
+	}
+    }
+
+    list_tile *result = NULL;
+    if ( list_cursor >0 ) {
+	result = calloc(list_cursor, sizeof(list_tile));
+	if ( result == NULL )
+	    OOM_error();
+	memcpy(result, list, list_cursor);
+    }
+    return (list_tiles){list_cursor, result};
 }

@@ -33,7 +33,7 @@ class Tile {
 
   getInput = (key) => {
     this.n = key;
-    this.elem.innerText = key || '-';
+    this.elem.innerText = key || '';
   }
 }
 

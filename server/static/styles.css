@@ -180,6 +180,7 @@ body {
 /* pseudo terminal */
 #dev-space {
     height: 280px;
+    width: 30.6vw;
     overflow: hidden;
     font-size: 0.9em;
     background-color: black;

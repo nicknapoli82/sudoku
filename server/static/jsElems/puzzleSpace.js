@@ -9,7 +9,7 @@ class Tile {
     this.elem = document.createElement('div');
     this.elem.className = 'tile';
     this.elem.id = `tile${y}${x}`;
-    this.elem.innerText = '-';
+    this.elem.innerText = '';
     this.elem.tabIndex = 0;
   }
   makeActive = () => {

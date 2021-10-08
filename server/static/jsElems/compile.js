@@ -1,6 +1,6 @@
 import { fetchAPI } from "../jsUtils/fetchAPI.js";
 
-const compileButton = document.getElementById('compile');
+const compileButton = document.getElementById('compile-button');
 const compileResults = document.getElementById('compile-results');
 
 function compileRes(data, error = null) {

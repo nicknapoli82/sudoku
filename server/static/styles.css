@@ -1,122 +1,282 @@
-#app {
-    display: flex;
-    flex-direction: column;
+
+html {font-size: calc(0.7em + 0.7vw)}
+button {font-size: inherit}
+
+body {
+    font-size: 0.8em;
+    height: 96vh;
 }
 
 #puzzle-space {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
     grid-template-rows: repeat(9, 1fr);
-    max-height: 60vh;
-    min-height: 60vh;
-    min-width: 60%;
-    max-width: 60%;
-    background-color: black;
-    border-style: solid;
-    border-color: gray;
-    border-width: 10px;
-    border-radius: 20px;
-
+    max-height: 95vh;
+    min-height: 95vh;
+    min-width: 50%;
+    max-width: 50%;
+    background-color: rgb(121, 87, 87);
+    padding: 3px;
+    border-style: ridge;
+    border-width: 7px;
+    border-color: rgb(80, 53, 53);
+    margin-right: 3px;
 }
 
 #puzzle-space div {
     border: 2px solid black;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
+    font-size: 1.7em;
 }
 
 #puzzle-space div:nth-child(3n+3):not(:nth-child(9n+9)) {
-    border-right: 5px solid gray;
+    border-right: 3px solid rgb(204, 50, 50);
 }
 
 #puzzle-space div:nth-child(3n+3):not(:nth-child(9n+9)) + div {
-    border-left: 5px solid gray;
+    border-left: 3px solid rgb(204, 50, 50);
 }
 
 #puzzle-space div:nth-child(1n+19):nth-child(-1n+27) {
-    border-bottom: 5px solid gray;
+    border-bottom: 3px solid rgb(204, 50, 50);
 }
 
 #puzzle-space div:nth-child(1n+28):nth-child(-1n+36) {
-    border-top: 5px solid gray;
+    border-top: 3px solid rgb(204, 50, 50);
 }
 
 #puzzle-space div:nth-child(1n+46):nth-child(-1n+54) {
-    border-bottom: 5px solid gray;
+    border-bottom: 3px solid rgb(204, 50, 50);
 }
 
 #puzzle-space div:nth-child(1n+55):nth-child(-1n+63) {
-    border-top: 5px solid gray;
-}
-
-#mid-space {
-    display: flex;
-    flex-direction: row;
+    border-top: 3px solid rgb(204, 50, 50);
 }
 
 .tile {
-    background-color: cyan;
+    background-image: linear-gradient(to left, antiquewhite, whitesmoke);
     border: 5px;
+    margin: 2px;
+    padding-top: 15px;
+    padding-bottom: 5px;
     border-color: black;
+    justify-content: center;
+    align-content: center;
     text-align: center;
+    
 }
 
 .tile-input {
-    background-color: lightblue;
+    background-image: linear-gradient(to right, whitesmoke, lightblue);
+}
+
+.tile-input:hover {
+    cursor: crosshair;
 }
 
 .tile-invalid {
-    background-color: lightpink;
-}
-
-#dev-space {
-    height: 20%;
-}
-
-#dev-space hr {
-    height: 5px;
-    color: red;
-    background-color: red;
-}
-
-.help {
-    position: absolute;
-    top: 25px;
-    left: 25px;
-    background-color: black;
-    color: white;
-    min-height: 80%;
-    max-height: 80%;
-    min-width: 80%;
-    max-width: 80%;
-    padding: 30px;
-    border: 5px solid purple;
-}
-
-#puzzles-context {
-    overflow: auto;
-    float: none;
-    width: 100%;
-    max-height: 60vh;
+    background-image: linear-gradient(to right, whitesmoke, lightpink);
 }
 
 .puzzles-tr{
     background-color: black;
     color: white;
     display: block;
-    padding: 15px;
-    padding: 15px;
+    padding: 10px;
 }
 
 .puzzles-tr td {
-    background-color: white;
+    background-color: rgb(245, 233, 218);
     color: black;
     display: block;
-    border: 1px solid blue;
+    border: 1px solid rgb(49, 49, 49);
 }
 
 .puzzle-table-active td {
     display: none;
 }
 
+.help {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    background-color: white;
+    color: black;
+    min-height: 80%;
+    max-height: 80%;
+    min-width: 80%;
+    max-width: 80%;
+    padding: 30px;
+    border: 5px solid black;
+}
+
+/* main content space */
+#mid-space {
+    background-image: url('japan.jpeg');
+    background-position-y: 42%;
+    background-position-x: 67%;
+    background-size: 45%;
+    display: flex;
+    flex: none;
+    flex-direction: row;
+    height: 96vh;
+}
+
+/* user space - table and table cells */
+#table-space {
+    border-collapse: collapse !important;
+    margin-left: 0.8em;
+    padding: 0 !important;
+    width: 32vw;
+    height: 97vh;
+}
+
+#context-header {
+    vertical-align: top;
+    padding-top: 0.15em;
+    width: 32vw;
+}
+
+/* puzzle dropdown */
+#puzzles-context {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.1em;
+    vertical-align: top;
+    overflow: auto;
+    height: 96vh;
+    width: 13vw;
+}
+
+#puzzles-context:hover {
+    cursor: pointer;
+}
+
+/* textarea user input*/
+#puzzle-IO {
+    background-color: rgb(245, 233, 218);
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
+    overflow: scroll;
+    font-size: 1em;
+    border-style: ridge;
+    border-width:12px;
+    border-color: rgb(121, 87, 87);
+    margin-top: 20px;
+    padding-left: 7.5px;
+    padding-right: 7.5px;
+    height: 10vh;
+    width: 29.5vw;
+}
+
+#td-devspace {
+    background-color: black;
+    border: 3px ridge silver; 
+    vertical-align: top;
+    height: 18.25em;
+    width: 30.7vw;
+}
+
+/* pseudo terminal */
+#dev-space {
+    height: 280px;
+    overflow: hidden;
+    font-size: 0.9em;
+    background-color: black;
+    color: white;
+}
+
+#compile-results {
+    margin-left: 3vw;
+    margin-bottom: 0.5vh;
+}
+
+#dev-space:hover {
+    cursor: default;
+}
+
+dev-space hr {
+    color: red;
+    background-color: red;
+}
+
+/* input space */
 #user-Input input {
-    width: 60vh;
+    font-size: inherit;
+} 
+
+/* buttons controls*/
+#help-button {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: rgb(49, 49, 49);
+    color: white;
+    font-size: 1em;
+    margin-top: 5px;
+    margin-left: 2px;
+    padding: 5px;
+    padding-left: 6.5px;
+    padding-right: 6.5px;
+}
+
+#help-button:hover {
+    cursor: pointer;
+}
+
+#puzzles-button {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: rgb(49, 49, 49);
+    color: white;
+    font-size: 1em;
+    margin-top: 5px;
+    padding: 5px;
+}
+
+#puzzles-button:hover {
+    cursor: pointer;
+}
+
+#solve-puzzle {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: rgb(49, 49, 49);
+    color: white;
+    font-size: 1em;
+    margin-top: 5px;
+    padding: 5px;
+}
+
+#solve-puzzle:hover {
+    cursor: pointer;
+}
+
+#compile-button {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: rgb(49, 49, 49);
+    color: white;
+    font-size: 1em;
+    margin-top: 5px;
+    margin-right: 1px;
+    padding: 5px;
+}
+
+#compile-button:hover {
+    cursor: pointer;
+}
+
+#title-button {
+    font-family: Brush Script MT, cursive;
+    background-color: black;
+    color: white;
+    font-size: 3.75em;
+    padding-top: 9px;
+    padding-right: 1em;
+    padding-left: 1em;
+    padding-bottom: 12px;
+}
+
+#title-button:hover {
+    cursor: pointer;
+}
+
+#help:hover {
+    cursor: help;
 }

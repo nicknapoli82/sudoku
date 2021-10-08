@@ -1,39 +1,47 @@
 <!DOCTYPE html>
 
 <html lang="en-us">
+
   <head>
     <meta charset="UTF-8">
-    <meta name="description" content="Fun with Sudoku">
-    <meta name="author" content="Nicholas Napoli">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" window.top="Fun with Sudoku">
+    <meta name="author" window.top="Nicholas Napoli">
+    <meta name="viewport" window.top="width=device-width, initial-scale=1.0">
     <link rel="icon" href="fav.jpg">
     <link rel="stylesheet" href="styles.css">
     <title>Sudoku!</title>
     <script src="main.js" type="module" defer></script>
   </head>
-  <body>
-    <div id="app">
-      <div id="mid-space">
-	<div id="puzzle-space">
-	</div>
-	<div id="puzzles-context">
-	  <div id="context-header">
-	    <span>
-	      <button>Puzzles</button>
-	      <i id="help-button" style="font-size:24px">&#x1f6c8;</i>
-	    </span>
-	  </div>
-	</div>
-      </div>
-      <div id="user-Input">
-	<input id="puzzle-IO"></input>
-	<button id="solve-puzzle">Solve Puzzle</button>
-      </div>
-      <div id="dev-space">
-	<hr/>
-	<button id="compile">Compile</button>
-	<div id="compile-results"></div>
-      </div>
-    </div>
-  </body>
+
+<body>
+  <div id="mid-space">
+	  <div id="puzzle-space"></div>
+      <div id="puzzles-context"></div>   
+     
+        <table id="table-space">
+          <tr id="context-header">
+            <td id="context-header">     
+              <button disabled id="title-button" alt="Title-Sudoku">数独 Sudoku!</button>
+              <br>
+              <button id="compile"><img src="cogs.png" alt="Cogs Compile" height="60" width="60" id="compile-img"><br>Compile</button>
+              <button id="puzzles-button"><img src="Sudokuboard.jpeg" alt="Sudoku Board" height="60" width="60" id="puzzles-img"><br>Select Puzzle</button>
+              <button id="solve-puzzle"><img src="fav.jpg" alt="Cube Puzzle" height="60" width="60" id="solve-img"><br>Solve Puzzle</button>
+              <button id="help-button"><img src="infobutton.png" alt="Information Icon" height="60" width="60" id="help-img"><br>Help</button>     
+              <br>
+              <input type="text" id="puzzle-IO">
+            </td>   
+          </tr>
+          <tr>
+          <td id="td-devspace">
+            <div id="dev-space">
+              <hr/>
+                <div id="compile-results"></div>    
+            </div>
+          </td>
+        </tr>
+      </table>        
+    
+    </div>     
+</body>
+
 </html>

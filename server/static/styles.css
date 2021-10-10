@@ -191,7 +191,7 @@ body {
 
 /* pseudo terminal */
 #dev-space {
-    height: 280px;
+    height: 17em;
     width: 30.6vw;
     overflow: hidden;
     font-size: 0.9em;

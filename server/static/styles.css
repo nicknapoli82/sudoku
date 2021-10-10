@@ -86,7 +86,7 @@ body {
     background-color: black;
     color: white;
     display: block;
-    padding: 0.3em;
+    padding: 0.2em;
 }
 
 .puzzles-tr td {
@@ -94,6 +94,7 @@ body {
     color: black;
     display: block;
     border: 0.07em solid rgb(49, 49, 49);
+    padding: 0.2em;
 }
 
 .puzzle-table-active td {
@@ -133,6 +134,7 @@ body {
 #table-space {
     border-collapse: collapse !important;
     margin-left: 0.8em;
+    text-align: center;
     padding: 0 !important;
     width: 32vw;
     height: 96vh;
@@ -142,6 +144,8 @@ body {
     vertical-align: top;
     padding-top: 0.15em;
     width: 32vw;
+    justify-content: space-between;
+    align-items: space-between;
 }
 
 /* puzzle dropdown */
@@ -151,7 +155,8 @@ body {
     vertical-align: top;
     overflow: auto;
     height: 96vh;
-    width: 13vw;
+    padding-left: 0.5em;
+    width: 13%;
 }
 
 #puzzles-context:hover {
@@ -166,13 +171,11 @@ body {
     overflow: scroll;
     font-size: 1em;
     border-style: ridge;
-    border-width:12px;
+    border-width: 0.4em;
     border-color: rgb(121, 87, 87);
-    margin-top: 20px;
-    padding-left: 7.5px;
-    padding-right: 7.5px;
+    margin-top: 0.5em;
     height: 10vh;
-    width: 29.5vw;
+    width: 25vw;
 }
 
 #td-devspace {
@@ -212,20 +215,18 @@ dev-space hr {
     font-size: inherit;
 } 
 
-/* buttons controls*/
-#help-button {
+#compile-button {
     font-family: 'Courier New', Courier, monospace;
     background-color: rgb(49, 49, 49);
     color: white;
-    font-size: 1em;
-    margin-top: 5px;
-    margin-left: 2px;
-    padding: 5px;
-    padding-left: 6.5px;
-    padding-right: 6.5px;
+    font-size: 0.9em;
+    width: 22%;
+    padding-bottom: 0.4em;
+    padding-top: 0.4em;
+    margin-top: 0.5em;
 }
 
-#help-button:hover {
+#compile-button:hover {
     cursor: pointer;
 }
 
@@ -233,9 +234,11 @@ dev-space hr {
     font-family: 'Courier New', Courier, monospace;
     background-color: rgb(49, 49, 49);
     color: white;
-    font-size: 1em;
-    margin-top: 5px;
-    padding: 5px;
+    font-size: 0.9em;
+    width: 25%;
+    padding-bottom: 0.4em;
+    padding-top: 0.4em;
+    margin-top: 0.5em;
 }
 
 #puzzles-button:hover {
@@ -246,26 +249,31 @@ dev-space hr {
     font-family: 'Courier New', Courier, monospace;
     background-color: rgb(49, 49, 49);
     color: white;
-    font-size: 1em;
-    margin-top: 5px;
-    padding: 5px;
+    font-size: 0.9em;
+    width: 25%;
+    padding-bottom: 0.4em;
+    padding-top: 0.4em;
+    margin-top: 0.5em;
 }
 
 #solve-puzzle:hover {
     cursor: pointer;
 }
 
-#compile-button {
+/* buttons controls*/
+#help-button {
     font-family: 'Courier New', Courier, monospace;
     background-color: rgb(49, 49, 49);
     color: white;
-    font-size: 1em;
-    margin-top: 5px;
-    margin-right: 1px;
-    padding: 5px;
+    font-size: 0.9em;
+    width: 22%;
+    padding-bottom: 0.4em;
+    padding-top: 0.4em;
+    margin-top: 0.5em;
+    position: relative;
 }
 
-#compile-button:hover {
+#help-button:hover {
     cursor: pointer;
 }
 
@@ -276,6 +284,7 @@ dev-space hr {
     padding-right: 1em;
     padding-left: 1em;
     padding-bottom: 1em;
+    width: 100%;
 }
 
 #title-button:hover {
@@ -288,4 +297,9 @@ dev-space hr {
 
 #arrow-glyphs {
     font-size: 1.9em;
+}
+
+#sudokuLogo {
+    width: 90%;
+    height: 80%;
 }

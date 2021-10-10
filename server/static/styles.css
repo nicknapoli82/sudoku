@@ -4,7 +4,7 @@ button {font-size: inherit}
 
 body {
     font-size: 0.8em;
-    height: 96vh;
+    height: 98vh;
 }
 
 #puzzle-space {
@@ -16,15 +16,13 @@ body {
     min-width: 50%;
     max-width: 50%;
     background-color: rgb(121, 87, 87);
-    padding: 3px;
-    border-style: ridge;
-    border-width: 7px;
-    border-color: rgb(80, 53, 53);
-    margin-right: 3px;
+    padding: 0.25em;
+    border: 0.35em ridge rgb(80, 53, 53);
+    margin-right: 0.2em;
 }
 
 #puzzle-space div {
-    border: 2px solid black;
+    border: 0.07em solid black;
     font-family: 'Courier New', Courier, monospace;
     font-weight: 600;
     font-size: 1.7em;
@@ -56,19 +54,20 @@ body {
 
 .tile {
     background-image: linear-gradient(to left, antiquewhite, whitesmoke);
-    border: 5px;
-    margin: 2px;
-    padding-top: 15px;
-    padding-bottom: 5px;
+    border: 0.02em;
+    margin: 0.02em;
+    padding-top: 0.635em;
+    padding-bottom: 0.5em;
     border-color: black;
-    justify-content: center;
-    align-content: center;
     text-align: center;
-    
+}
+
+.tile {
+    cursor: crosshair;
 }
 
 .tile-input {
-    background-image: linear-gradient(to right, whitesmoke, lightblue);
+    background-image: linear-gradient(to right, whitesmoke, rgb(129, 209, 129));
 }
 
 .tile-input:hover {
@@ -76,21 +75,25 @@ body {
 }
 
 .tile-invalid {
-    background-image: linear-gradient(to right, whitesmoke, lightpink);
+    background-image: linear-gradient(to right, whitesmoke, rgb(207, 44, 44));
+}
+
+.tile-invalid {
+    cursor: crosshair;
 }
 
 .puzzles-tr{
     background-color: black;
     color: white;
     display: block;
-    padding: 10px;
+    padding: 0.3em;
 }
 
 .puzzles-tr td {
     background-color: rgb(245, 233, 218);
     color: black;
     display: block;
-    border: 1px solid rgb(49, 49, 49);
+    border: 0.07em solid rgb(49, 49, 49);
 }
 
 .puzzle-table-active td {
@@ -98,17 +101,20 @@ body {
 }
 
 .help {
-    position: absolute;
-    top: 25px;
-    left: 25px;
-    background-color: white;
+    border: 0.5em ridge rgb(80, 53, 53);
+    background-image: linear-gradient(to left, antiquewhite, whitesmoke);
+    font-family:'Courier New', Courier, monospace;
+    font-size: 0.8rem;
     color: black;
-    min-height: 80%;
-    max-height: 80%;
-    min-width: 80%;
-    max-width: 80%;
-    padding: 30px;
-    border: 5px solid black;
+    min-height: 60%;
+    max-height: 60%;
+    min-width: 50%;
+    max-width: 50%;
+    position: absolute;
+    top: 8%;
+    left: 20%;
+    padding: 2rem;
+    padding-bottom: 4rem;
 }
 
 /* main content space */
@@ -120,7 +126,7 @@ body {
     display: flex;
     flex: none;
     flex-direction: row;
-    height: 96vh;
+    height: 98vh;
 }
 
 /* user space - table and table cells */
@@ -129,7 +135,7 @@ body {
     margin-left: 0.8em;
     padding: 0 !important;
     width: 32vw;
-    height: 97vh;
+    height: 96vh;
 }
 
 #context-header {
@@ -264,14 +270,12 @@ dev-space hr {
 }
 
 #title-button {
-    font-family: Brush Script MT, cursive;
     background-color: black;
     color: white;
-    font-size: 3.75em;
-    padding-top: 9px;
+    padding-top: 1em;
     padding-right: 1em;
     padding-left: 1em;
-    padding-bottom: 12px;
+    padding-bottom: 1em;
 }
 
 #title-button:hover {
@@ -280,4 +284,8 @@ dev-space hr {
 
 #help:hover {
     cursor: help;
+}
+
+#arrow-glyphs {
+    font-size: 1.9em;
 }

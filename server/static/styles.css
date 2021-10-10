@@ -174,8 +174,11 @@ body {
     border-width: 0.4em;
     border-color: rgb(121, 87, 87);
     margin-top: 0.5em;
+    position: absolute;
+    top: 37%;
+    left: 65.5%;
     height: 10vh;
-    width: 25vw;
+    width: 31%;
 }
 
 #td-devspace {

@@ -25,7 +25,7 @@ body {
     border: 0.07em solid black;
     font-family: 'Courier New', Courier, monospace;
     font-weight: 600;
-    font-size: 1.7em;
+    font-size: 1.6em;
 }
 
 #puzzle-space div:nth-child(3n+3):not(:nth-child(9n+9)) {
@@ -56,8 +56,8 @@ body {
     background-image: linear-gradient(to left, antiquewhite, whitesmoke);
     border: 0.02em;
     margin: 0.02em;
-    padding-top: 0.635em;
-    padding-bottom: 0.5em;
+    padding-top: 3.1vh;
+    padding-bottom: 1.58vh;
     border-color: black;
     text-align: center;
 }

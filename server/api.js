@@ -69,7 +69,10 @@ function solvePuzzle(req, res) {
     data.push(chunk);
   });
   req.on('end', () => {
-    data = data.map((b) => JSON.parse(b)).join();
+    data = data.map((b) => JSON.parse(b)).join().split('')
+      .filter((c) => !isNaN(Number.parseInt(c))).join('');
+    if (data.length < 81)
+      res.end(JSON.stringify({ stdout: "Puzzle input is not long enough!" }));
     exec(`echo ${data} | ${PATHS.root}/sudoku`, (error, stdout, stderr) => {
       const result = { error, stdout, stderr };
       res.end(JSON.stringify(result));

@@ -3,9 +3,10 @@ html {font-size: calc(0.7em + 0.7vw)}
 button {font-size: inherit}
 
 body {
+    border: 0.3em ridge silver;
     font-size: 0.8em;
-    height: 98vh;
-    width: 99%;
+    height: 96.5vh;
+    width: 98.5%;
 }
 
 #puzzle-space {
@@ -21,7 +22,7 @@ body {
     border: 0.35em ridge rgb(80, 53, 53);
     border-radius: 3px;
     margin-right: 0.2em;
-    margin-top: 0.8em;
+    margin-top: 0.6em;
     margin-left: 0.5em;
 }
 
@@ -133,7 +134,7 @@ body {
     display: flex;
     flex: none;
     flex-direction: row;
-    height: 98vh;
+    height: inherit;
 }
 
 /* puzzle dropdown */
@@ -158,6 +159,7 @@ body {
 #table-space {
     border-collapse: collapse !important;
     margin-left: 1.2em;
+    margin-right: 0.5em;
     text-align: center;
     padding: 0 !important;
     width: 32vw;
@@ -183,7 +185,7 @@ body {
 #edit-icon {
     padding: 0.5em;
     height: 10vh;
-    width: 6vw;
+    width: 5.5vw;
 }
 
 /* textarea user input*/
@@ -209,8 +211,6 @@ body {
     background-color: black;
     border: 2px ridge silver;
     border-radius: 5px;
-    margin-bottom: 0.4em;
-    vertical-align: top;
     height: 16em;
     width: 100%;
 }
@@ -318,7 +318,7 @@ dev-space hr {
     padding-right: 1em;
     padding-left: 1em;
     padding-bottom: 1em;
-    margin-top: 0.3em;
+    margin-top: 0.6em;
     width: 100%;
 }
 

@@ -130,8 +130,8 @@ body {
 #mid-space {
     background-image: url('japan.jpeg');
     background-position-y: 42.6%;
-    background-position-x: 85%;
-    background-size: 71%;
+    background-position-x: 75%;
+    background-size: 68%;
     display: flex;
     flex: none;
     flex-direction: row;
@@ -145,7 +145,7 @@ body {
     font-size: 1.1em;
     vertical-align: top;
     overflow: auto;
-    height: 95vh;
+    height: 94vh;
     padding-left: 0.5em;
     padding: 0.2em;
     margin-top: 0.3em;

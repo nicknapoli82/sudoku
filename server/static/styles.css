@@ -252,7 +252,7 @@ body {
 /* pseudo terminal */
 #dev-space {
     height: 100%;
-    width: 32vw;
+    width: 31vw;
     overflow: hidden;
     font-size: 0.8em;
     background-color: black;
